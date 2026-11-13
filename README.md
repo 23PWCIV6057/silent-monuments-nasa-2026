@@ -2,6 +2,10 @@
 
 Built for the **2026 NASA International Space Apps Challenge** — Challenge: **[Abandoned but not Forgotten: Storytelling about NASA's Discarded Equipment on the Moon and Mars](https://www.spaceappschallenge.org/2026/challenges/nasas-discarded-equipment-storytelling/)**.
 
+- **Live Production App:** [https://silent-monuments-nasa-2026.vercel.app](https://silent-monuments-nasa-2026.vercel.app)
+- **7-Slide Presentation Deck:** [https://silent-monuments-nasa-2026.vercel.app/slides.html](https://silent-monuments-nasa-2026.vercel.app/slides.html)
+- **GitHub Repository:** [https://github.com/23PWCIV6057/silent-monuments-nasa-2026](https://github.com/23PWCIV6057/silent-monuments-nasa-2026)
+
 ## Overview
 
 **Silent Monuments** is an interactive, zero-budget 2D retro-telemetry story quest and **NSSDCA** encyclopedia designed for school-age learners, educators, and space enthusiasts. Players step into the boots of **Junior Archivist Maya** to visit **5 solar-system frontiers** and interact with all **13 official NASA discarded hardware suites** from the challenge resources:

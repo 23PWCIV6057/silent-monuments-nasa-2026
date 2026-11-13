@@ -10,6 +10,10 @@
 ## 1. Project Name
 **Silent Monuments: Echoes of Moon, Mars & Deep Space**
 
+- **Live Demo URL (Project Link):** `https://silent-monuments-nasa-2026.vercel.app`
+- **7-Slide Deck URL:** `https://silent-monuments-nasa-2026.vercel.app/slides.html`
+- **Public GitHub Repo URL:** `https://github.com/23PWCIV6057/silent-monuments-nasa-2026`
+
 ---
 
 ## 2. Challenge
