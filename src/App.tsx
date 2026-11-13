@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { CHAPTERS, NSSDCA_ARTIFACTS, ArtifactItem } from './data/nasaEquipmentData';
 import { MiniGameContainer } from './components/MiniGames';
+import { StoryStage } from './components/StoryStage';
 import { sound } from './utils/soundEngine';
 
 type StoryBeat = 'story' | 'experiment' | 'reflection';
@@ -261,8 +262,14 @@ export function App() {
           <div className="max-w-3xl mx-auto">
             {/* PROLOGUE */}
             {showPrologue && !showCertificateModal && (
-              <section className="story-beat-enter py-12 sm:py-16 text-center space-y-8">
-                <div className="space-y-4 max-w-2xl mx-auto">
+              <section className="story-beat-enter py-6 sm:py-10 text-center space-y-6">
+                <StoryStage
+                  chapterId={1}
+                  dialogueStep={0}
+                  characterName="Eagle Descent Stage & LRV-1"
+                />
+
+                <div className="space-y-3 max-w-2xl mx-auto pt-2">
                   <h1 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
                     They Are Not Space Junk.{' '}
                     <span className="text-amber-400 block sm:inline">They Are Monuments.</span>
@@ -371,10 +378,17 @@ export function App() {
                   </button>
                 </div>
 
-                {/* BEAT 1: STORY */}
+                {/* BEAT 1: STORY WITH 2D ANIMATED CHARACTER DIORAMA */}
                 {storyBeat === 'story' && (
-                  <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 sm:p-10 shadow-xl space-y-6 story-beat-enter">
-                    <div className="flex items-center justify-between gap-2 pb-3 border-b border-[var(--color-border)]">
+                  <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 sm:p-7 shadow-xl space-y-5 story-beat-enter">
+                    {/* 2D Animated Character Stage (Maya + NASA Hardware Character) */}
+                    <StoryStage
+                      chapterId={currentChapter.id}
+                      dialogueStep={dialogueStep}
+                      characterName={currentChapter.characterName}
+                    />
+
+                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-[var(--color-border)]">
                       <span className="text-xs sm:text-sm font-mono-tech text-amber-400 font-semibold">
                         {currentChapter.characterName}
                       </span>
@@ -385,12 +399,12 @@ export function App() {
 
                     <blockquote
                       key={dialogueStep}
-                      className="story-beat-enter text-lg sm:text-xl leading-relaxed text-[var(--color-foreground)] font-normal min-h-[120px] flex items-center"
+                      className="story-beat-enter text-base sm:text-lg leading-relaxed text-[var(--color-foreground)] font-normal min-h-[88px] flex items-center"
                     >
                       “{currentChapter.dialogueIntro[dialogueStep]}”
                     </blockquote>
 
-                    <div className="flex items-center justify-between gap-4 pt-4 border-t border-[var(--color-border)]">
+                    <div className="flex items-center justify-between gap-4 pt-3 border-t border-[var(--color-border)]">
                       <button
                         type="button"
                         disabled={dialogueStep === 0}
