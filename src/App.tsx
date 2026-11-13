@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Rocket,
-  Compass,
   Database,
   Award,
   Volume2,
@@ -10,32 +9,39 @@ import {
   Moon,
   ExternalLink,
   CheckCircle2,
-  Lock,
   Unlock,
   Sparkles,
   BookOpen,
   Radio,
-  ShieldCheck,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   MapPin,
-  Cpu,
   FileText,
   Play,
   Copy,
-  Check
+  Check,
+  Compass
 } from 'lucide-react';
 import { CHAPTERS, NSSDCA_ARTIFACTS, ArtifactItem } from './data/nasaEquipmentData';
 import { MiniGameContainer } from './components/MiniGames';
 import { sound } from './utils/soundEngine';
 
+type StoryBeat = 'story' | 'experiment' | 'reflection';
+
 export function App() {
   const [activeTab, setActiveTab] = useState<'quest' | 'catalog' | 'judge'>('quest');
+  const [showPrologue, setShowPrologue] = useState<boolean>(true);
   const [activeChapterId, setActiveChapterId] = useState<number>(1);
+  const [storyBeat, setStoryBeat] = useState<StoryBeat>('story');
+  const [dialogueStep, setDialogueStep] = useState<number>(0);
+  const [showFieldNotes, setShowFieldNotes] = useState<boolean>(false);
+  const [showCertificateModal, setShowCertificateModal] = useState<boolean>(false);
+
   const [completedGames, setCompletedGames] = useState<number[]>([]);
   const [completedQuizzes, setCompletedQuizzes] = useState<number[]>([]);
   const [selectedQuizOption, setSelectedQuizOption] = useState<Record<number, number>>({});
-  const [dialogueStep, setDialogueStep] = useState<number>(0);
+
   const [bodyFilter, setBodyFilter] = useState<string>('All');
   const [selectedArtifact, setSelectedArtifact] = useState<ArtifactItem | null>(NSSDCA_ARTIFACTS[0]);
   const [muted, setMuted] = useState<boolean>(false);
@@ -56,6 +62,17 @@ export function App() {
       html.classList.remove('light');
     }
   }, [lightMode]);
+
+  const selectChapter = (chapterId: number) => {
+    sound.playBeep(440 + chapterId * 50, 0.05);
+    setShowPrologue(false);
+    setShowCertificateModal(false);
+    setActiveChapterId(chapterId);
+    setStoryBeat('story');
+    setDialogueStep(0);
+    setShowFieldNotes(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const toggleMute = () => {
     const next = !muted;
@@ -89,6 +106,7 @@ export function App() {
       4: CHAPTERS[3].quiz.correctIndex,
       5: CHAPTERS[4].quiz.correctIndex
     });
+    setShowPrologue(false);
   };
 
   const totalProgress = Math.round(
@@ -107,450 +125,664 @@ export function App() {
     setTimeout(() => setCopiedSection(null), 2000);
   };
 
+  const chapterShortNames: Record<number, string> = {
+    1: 'The Moon',
+    2: 'Mars Rovers',
+    3: 'Mars Interior',
+    4: 'Ingenuity',
+    5: 'Deep Space'
+  };
+
+  const isLastDialogueLine = dialogueStep >= currentChapter.dialogueIntro.length - 1;
+  const isCurrentGameDone = completedGames.includes(currentChapter.id);
+  const isCurrentQuizDone = completedQuizzes.includes(currentChapter.id);
+
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--color-background)] text-[var(--color-foreground)] transition-colors duration-200">
-      {/* Top Telemetry Header */}
-      <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-background)]/90 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
-              <Rocket className="w-6 h-6" />
+    <div className="min-h-screen flex flex-col bg-[var(--color-background)] text-[var(--color-foreground)] story-backdrop transition-colors duration-200">
+      {/* Minimal, Calm Top Bar */}
+      <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-background)]/85 backdrop-blur-md">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+          {/* Brand Title */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('quest');
+              setShowPrologue(true);
+              setShowCertificateModal(false);
+            }}
+            className="flex items-center gap-2.5 text-left cursor-pointer group"
+          >
+            <div className="w-9 h-9 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:bg-amber-500/25 transition">
+              <Rocket className="w-4 h-4" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-display font-extrabold tracking-wider text-sm sm:text-base text-amber-400">
-                  SILENT MONUMENTS
-                </span>
-                <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-mono-tech uppercase bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 rounded-full">
-                  NASA Space Apps 2026
-                </span>
-              </div>
-              <p className="text-xs text-[var(--color-muted-foreground)] font-mono-tech">
-                Abandoned but not Forgotten: Moon, Mars & Deep Space Archive Quest
-              </p>
+              <span className="font-display font-bold tracking-wide text-sm text-[var(--color-foreground)] block leading-none">
+                Silent Monuments
+              </span>
+              <span className="text-[11px] text-[var(--color-muted-foreground)] block mt-1">
+                NASA Space Apps 2026
+              </span>
             </div>
-          </div>
+          </button>
 
-          {/* Primary Navigation */}
-          <nav className="flex items-center gap-1.5" aria-label="Main Navigation">
+          {/* Center Chapter Timeline Pill (only visible in Story mode after Prologue) */}
+          {activeTab === 'quest' && !showPrologue && !showCertificateModal && (
+            <nav
+              aria-label="Story Chapters"
+              className="hidden md:flex items-center gap-1 p-1 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)]"
+            >
+              {CHAPTERS.map((chap) => {
+                const isSelected = activeChapterId === chap.id;
+                const isDone =
+                  completedGames.includes(chap.id) && completedQuizzes.includes(chap.id);
+                return (
+                  <button
+                    key={chap.id}
+                    type="button"
+                    onClick={() => selectChapter(chap.id)}
+                    className={`min-h-[34px] px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 transition cursor-pointer ${
+                      isSelected
+                        ? 'bg-amber-500 text-zinc-950 font-semibold shadow-sm'
+                        : isDone
+                        ? 'text-emerald-400 hover:bg-[var(--color-muted)]'
+                        : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-muted)]'
+                    }`}
+                  >
+                    <span>{chap.id}. {chapterShortNames[chap.id]}</span>
+                    {isDone && (
+                      <CheckCircle2
+                        className={`w-3.5 h-3.5 ${
+                          isSelected ? 'text-zinc-950' : 'text-emerald-400'
+                        }`}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+          )}
+
+          {/* Right Quiet Controls */}
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => {
-                sound.playBeep(520, 0.05);
+                sound.playBeep(520, 0.04);
                 setActiveTab('quest');
               }}
-              className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-mono-tech font-bold flex items-center gap-2 transition cursor-pointer ${
+              className={`min-h-[38px] px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition cursor-pointer ${
                 activeTab === 'quest'
-                  ? 'bg-amber-500 text-zinc-950 shadow-sm'
-                  : 'bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-[var(--color-foreground)]'
+                  ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                  : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface)]'
               }`}
             >
-              <Compass className="w-4 h-4" />
-              <span>Story Quest ({totalProgress}%)</span>
+              <Compass className="w-3.5 h-3.5" />
+              <span>Story</span>
             </button>
 
             <button
               type="button"
               onClick={() => {
-                sound.playBeep(580, 0.05);
+                sound.playBeep(580, 0.04);
                 setActiveTab('catalog');
               }}
-              className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-mono-tech font-bold flex items-center gap-2 transition cursor-pointer ${
+              className={`min-h-[38px] px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition cursor-pointer ${
                 activeTab === 'catalog'
-                  ? 'bg-amber-500 text-zinc-950 shadow-sm'
-                  : 'bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-[var(--color-foreground)]'
+                  ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                  : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface)]'
               }`}
             >
-              <Database className="w-4 h-4" />
-              <span>NSSDCA Catalog (13)</span>
+              <Database className="w-3.5 h-3.5" />
+              <span>Archive (13)</span>
             </button>
 
             <button
               type="button"
               onClick={() => {
-                sound.playBeep(640, 0.05);
+                sound.playBeep(640, 0.04);
                 setActiveTab('judge');
               }}
-              className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-mono-tech font-bold flex items-center gap-2 transition cursor-pointer ${
+              className={`min-h-[38px] px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition cursor-pointer ${
                 activeTab === 'judge'
-                  ? 'bg-amber-500 text-zinc-950 shadow-sm'
-                  : 'bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-[var(--color-foreground)]'
+                  ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                  : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface)]'
               }`}
             >
-              <Award className="w-4 h-4" />
-              <span className="hidden md:inline">Submission & 7-Slide Deck</span>
-              <span className="md:hidden">Deck</span>
-            </button>
-          </nav>
-
-          {/* Utility Controls (Sound + Theme + Judge Unlock) */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={unlockAllForJudges}
-              title="Unlock all 5 chapters and certificate immediately for Judge evaluation"
-              className="min-h-[44px] px-3 py-2 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-mono-tech flex items-center gap-1.5 transition cursor-pointer"
-            >
-              <Unlock className="w-4 h-4" />
-              <span className="hidden lg:inline">Judge Unlock All</span>
+              <Award className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">7-Slide Deck</span>
             </button>
 
             <button
               type="button"
               onClick={toggleMute}
-              aria-label={muted ? 'Unmute telemetry audio' : 'Mute telemetry audio'}
-              className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-muted)] border border-[var(--color-border)] flex items-center justify-center transition cursor-pointer"
+              aria-label={muted ? 'Unmute audio' : 'Mute audio'}
+              className="min-w-[38px] min-h-[38px] p-2 rounded-lg text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface)] flex items-center justify-center transition cursor-pointer"
             >
-              {muted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-amber-400" />}
+              {muted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4" />}
             </button>
 
             <button
               type="button"
               onClick={() => setLightMode((m) => !m)}
-              aria-label={lightMode ? 'Switch to Dark Space Mode' : 'Switch to High-Contrast Light Mode'}
-              className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-muted)] border border-[var(--color-border)] flex items-center justify-center transition cursor-pointer"
+              aria-label={lightMode ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              className="min-w-[38px] min-h-[38px] p-2 rounded-lg text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface)] flex items-center justify-center transition cursor-pointer"
             >
-              {lightMode ? <Moon className="w-4 h-4 text-slate-700" /> : <Sun className="w-4 h-4 text-amber-400" />}
+              {lightMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-8">
+      {/* Main Content Container */}
+      <main className="flex-1 w-full mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* ===================================================================
-            TAB 1: INTERACTIVE 5-CHAPTER STORY QUEST (ZUMORRODA-X BLUEPRINT)
+            VIEW 1: CALM, FOCUSED STORYTELLING FLOW (ONE SCENE AT A TIME)
         =================================================================== */}
         {activeTab === 'quest' && (
-          <div className="space-y-6">
-            {/* Hero Story Banner */}
-            <section className="relative rounded-2xl overflow-hidden border border-[var(--color-border)] bg-gradient-to-r from-zinc-900 via-zinc-900/95 to-indigo-950/80 p-5 sm:p-7 text-white shadow-lg">
-              <div className="max-w-3xl space-y-2.5">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-mono-tech">
+          <div className="max-w-3xl mx-auto">
+            {/* SCENE A: PROLOGUE / OPENING COVER */}
+            {showPrologue && !showCertificateModal && (
+              <section className="story-beat-enter py-6 sm:py-10 text-center space-y-8">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono-tech">
                   <Radio className="w-3.5 h-3.5 animate-pulse" />
-                  <span>DEEP SPACE NETWORK ARCHIVE QUEST • 5 PLAYABLE MISSIONS</span>
+                  <span>An Interactive Story of NASA’s Left-Behind Pioneers</span>
                 </div>
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">
-                  Bring NASA’s Silent Off-World Monuments Back to Life
-                </h1>
-                <p className="text-sm text-zinc-300 leading-relaxed">
-                  Since the 1960s, NASA has left heroic landers, electric moon buggies, rovers, helicopters, and deep-space probes across the Solar System. Step into the boots of <strong>Junior Archivist Maya</strong>: travel across 5 celestial frontiers, hear each machine’s first-person story, and run hands-on instrument simulations powered by real <strong>NASA NSSDCA</strong> records.
-                </p>
-              </div>
-            </section>
 
-            {/* Chapter Selector Stepper */}
-            <section aria-label="Mission Chapters" className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
-              {CHAPTERS.map((chap) => {
-                const gameDone = completedGames.includes(chap.id);
-                const quizDone = completedQuizzes.includes(chap.id);
-                const fullyDone = gameDone && quizDone;
-                const isSelected = activeChapterId === chap.id;
+                <div className="space-y-4 max-w-2xl mx-auto">
+                  <h1 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
+                    They Are Not Space Junk.{' '}
+                    <span className="text-amber-400 block sm:inline">They Are Monuments.</span>
+                  </h1>
+                  <p className="text-base sm:text-lg text-[var(--color-muted-foreground)] leading-relaxed">
+                    Across the dusty plains of the Moon, the rust-red valleys of Mars, and the dark void between worlds, thirteen NASA spacecraft rest where their fuel or sunlight finally ran out.
+                  </p>
+                  <p className="text-base sm:text-lg text-[var(--color-foreground)]/90 leading-relaxed">
+                    Step into the boots of <strong>Junior Archivist Maya</strong>. Tune into five quiet worlds, listen to each machine tell its story in its own words, and wake its scientific instruments one last time.
+                  </p>
+                </div>
 
-                return (
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                   <button
-                    key={chap.id}
                     type="button"
-                    onClick={() => {
-                      sound.playBeep(440 + chap.id * 60, 0.05);
-                      setActiveChapterId(chap.id);
-                      setDialogueStep(0);
-                    }}
-                    className={`min-h-[76px] p-3.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
-                      isSelected
-                        ? 'border-amber-400 bg-amber-500/15 ring-2 ring-amber-400/30'
-                        : fullyDone
-                        ? 'border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/15'
-                        : 'border-[var(--color-border)] bg-[var(--color-card)] hover:bg-[var(--color-surface)]'
+                    onClick={() => selectChapter(1)}
+                    className="min-h-[52px] px-8 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-base flex items-center gap-2.5 shadow-lg shadow-amber-500/20 transition cursor-pointer"
+                  >
+                    <span>Begin Chapter 1: The Moon</span>
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={unlockAllForJudges}
+                    className="min-h-[52px] px-5 py-3.5 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-muted)] border border-[var(--color-border)] text-xs font-mono-tech text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] flex items-center gap-2 transition cursor-pointer"
+                  >
+                    <Unlock className="w-4 h-4 text-emerald-400" />
+                    <span>Judge Fast-Track (Unlock All 5 Chapters)</span>
+                  </button>
+                </div>
+
+                {/* Subtle 5-Chapter Preview Strip */}
+                <div className="pt-8 border-t border-[var(--color-border)]">
+                  <p className="text-xs text-[var(--color-muted-foreground)] mb-4">
+                    Or jump directly to any of the 5 chapters in the journey:
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-left">
+                    {CHAPTERS.map((chap) => (
+                      <button
+                        key={chap.id}
+                        type="button"
+                        onClick={() => selectChapter(chap.id)}
+                        className="p-3 rounded-xl bg-[var(--color-surface)]/70 hover:bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-amber-500/40 transition cursor-pointer"
+                      >
+                        <span className="text-[11px] font-mono-tech text-amber-400 block">
+                          Chapter {chap.id}
+                        </span>
+                        <span className="text-xs font-semibold text-[var(--color-foreground)] mt-0.5 block">
+                          {chapterShortNames[chap.id]}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* SCENE B: ACTIVE CHAPTER — GUIDED 3-BEAT FLOW */}
+            {!showPrologue && !showCertificateModal && (
+              <div className="space-y-8 story-beat-enter" key={`${activeChapterId}-${storyBeat}`}>
+                {/* Mobile Chapter Switcher */}
+                <div className="flex md:hidden items-center justify-between gap-2 pb-2 border-b border-[var(--color-border)]">
+                  <span className="text-xs font-mono-tech text-amber-400">
+                    Chapter {currentChapter.id} of 5
+                  </span>
+                  <div className="flex gap-1">
+                    {CHAPTERS.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => selectChapter(c.id)}
+                        className={`w-8 h-8 rounded-lg text-xs font-bold cursor-pointer ${
+                          activeChapterId === c.id
+                            ? 'bg-amber-500 text-zinc-950'
+                            : 'bg-[var(--color-surface)] text-[var(--color-muted-foreground)]'
+                        }`}
+                      >
+                        {c.id}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Chapter Header */}
+                <div className="text-center space-y-2">
+                  <div className="text-xs font-mono-tech text-amber-400">
+                    Chapter {currentChapter.id} of 5 • {currentChapter.celestialBody} ({currentChapter.yearRange})
+                  </div>
+                  <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">
+                    {currentChapter.title.replace(/^Chapter \d+:\s*/, '')}
+                  </h1>
+                  <p className="text-sm text-[var(--color-muted-foreground)]">
+                    {currentChapter.subtitle}
+                  </p>
+                </div>
+
+                {/* 3-Beat Story Flow Stepper */}
+                <div
+                  role="tablist"
+                  aria-label="Chapter story steps"
+                  className="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)]"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={storyBeat === 'story'}
+                    onClick={() => setStoryBeat('story')}
+                    className={`min-h-[42px] px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition cursor-pointer ${
+                      storyBeat === 'story'
+                        ? 'bg-[var(--color-card)] text-amber-400 shadow-sm border border-amber-500/30 font-semibold'
+                        : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-mono-tech uppercase font-bold text-amber-400">
-                        CH {chap.id} • {chap.celestialBody}
-                      </span>
-                      {fullyDone ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      ) : (
-                        <span className="text-[10px] font-mono-tech text-zinc-400">
-                          {(gameDone ? 1 : 0) + (quizDone ? 1 : 0)}/2
-                        </span>
-                      )}
-                    </div>
-                    <div className="font-semibold text-xs line-clamp-2 mt-1">
-                      {chap.title.replace(/^Chapter \d+:\s*/, '')}
-                    </div>
+                    <span>1. The Story</span>
                   </button>
-                );
-              })}
-            </section>
 
-            {/* Active Chapter Workspace */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left Column (7 cols): First-Person Dialogue + 2D Mini-Game */}
-              <div className="lg:col-span-7 space-y-6">
-                {/* First-Person Hardware Transmission Box */}
-                <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 space-y-4 shadow-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-border)] pb-3">
-                    <div>
-                      <span className="text-xs font-mono-tech text-amber-400 uppercase font-bold">
-                        {currentChapter.nssdcaRef} • {currentChapter.yearRange}
-                      </span>
-                      <h2 className="font-display text-lg sm:text-xl font-bold mt-0.5">
-                        {currentChapter.title}
-                      </h2>
-                    </div>
-                    <a
-                      href={currentChapter.officialUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="min-h-[38px] px-3 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 text-xs font-mono-tech flex items-center gap-1.5 transition"
-                    >
-                      <span>Official NASA Archive</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={storyBeat === 'experiment'}
+                    onClick={() => setStoryBeat('experiment')}
+                    className={`min-h-[42px] px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition cursor-pointer ${
+                      storyBeat === 'experiment'
+                        ? 'bg-[var(--color-card)] text-amber-400 shadow-sm border border-amber-500/30 font-semibold'
+                        : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'
+                    }`}
+                  >
+                    <span>2. The Instrument</span>
+                    {isCurrentGameDone && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+                  </button>
 
-                  {/* Interactive Dialogue Console */}
-                  <div className="rounded-xl bg-zinc-950 border border-amber-500/30 p-4 space-y-3 text-zinc-100">
-                    <div className="flex items-center justify-between text-xs font-mono-tech text-amber-400">
-                      <span className="flex items-center gap-2 font-bold">
-                        <Radio className="w-4 h-4" />
-                        SPEAKING: {currentChapter.characterName}
-                      </span>
-                      <span>
-                        LOG {dialogueStep + 1} / {currentChapter.dialogueIntro.length}
-                      </span>
-                    </div>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={storyBeat === 'reflection'}
+                    onClick={() => setStoryBeat('reflection')}
+                    className={`min-h-[42px] px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition cursor-pointer ${
+                      storyBeat === 'reflection'
+                        ? 'bg-[var(--color-card)] text-amber-400 shadow-sm border border-amber-500/30 font-semibold'
+                        : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'
+                    }`}
+                  >
+                    <span>3. Reflection</span>
+                    {isCurrentQuizDone && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+                  </button>
+                </div>
 
-                    <p className="text-sm sm:text-base font-mono-tech leading-relaxed text-amber-100 min-h-[68px]">
-                      {currentChapter.dialogueIntro[dialogueStep]}
-                    </p>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <button
-                        type="button"
-                        disabled={dialogueStep === 0}
-                        onClick={() => {
-                          sound.playBeep(420, 0.04);
-                          setDialogueStep((s) => Math.max(0, s - 1));
-                        }}
-                        className="min-h-[38px] px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-xs font-mono-tech flex items-center gap-1 cursor-pointer transition"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                        Prev Transmission
-                      </button>
-
-                      <div className="flex gap-1.5">
-                        {currentChapter.dialogueIntro.map((_, idx) => (
-                          <span
-                            key={idx}
-                            className={`w-2 h-2 rounded-full ${
-                              idx === dialogueStep ? 'bg-amber-400' : 'bg-zinc-700'
-                            }`}
-                          />
-                        ))}
+                {/* =========================================================
+                    BEAT 1: THE STORY (FIRST-PERSON VOICE + OPTIONAL NOTES)
+                ========================================================= */}
+                {storyBeat === 'story' && (
+                  <div className="space-y-6 story-beat-enter">
+                    <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 sm:p-10 shadow-xl space-y-6">
+                      {/* Speaker Badge */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-[var(--color-border)]">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+                          <span className="text-xs sm:text-sm font-mono-tech text-amber-400 font-semibold">
+                            {currentChapter.characterName}
+                          </span>
+                        </div>
+                        <span className="text-xs font-mono-tech text-[var(--color-muted-foreground)]">
+                          Part {dialogueStep + 1} of {currentChapter.dialogueIntro.length}
+                        </span>
                       </div>
 
+                      {/* Main Story Text — Spacious, Easy to Read */}
+                      <blockquote
+                        key={dialogueStep}
+                        className="story-beat-enter text-lg sm:text-xl leading-relaxed text-[var(--color-foreground)] font-normal min-h-[120px] flex items-center"
+                      >
+                        “{currentChapter.dialogueIntro[dialogueStep]}”
+                      </blockquote>
+
+                      {/* Story Pacing Controls */}
+                      <div className="flex items-center justify-between gap-4 pt-4 border-t border-[var(--color-border)]">
+                        <button
+                          type="button"
+                          disabled={dialogueStep === 0}
+                          onClick={() => {
+                            sound.playBeep(420, 0.04);
+                            setDialogueStep((s) => Math.max(0, s - 1));
+                          }}
+                          className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-muted)] disabled:opacity-30 text-xs sm:text-sm font-medium flex items-center gap-1.5 cursor-pointer transition"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                          <span>Previous</span>
+                        </button>
+
+                        {/* Page Dots */}
+                        <div className="flex gap-2">
+                          {currentChapter.dialogueIntro.map((_, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              aria-label={`Go to story part ${idx + 1}`}
+                              onClick={() => setDialogueStep(idx)}
+                              className={`h-2 rounded-full transition-all cursor-pointer ${
+                                idx === dialogueStep
+                                  ? 'w-6 bg-amber-400'
+                                  : 'w-2 bg-[var(--color-muted-foreground)]/40'
+                              }`}
+                            />
+                          ))}
+                        </div>
+
+                        {!isLastDialogueLine ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              sound.playBeep(560, 0.04);
+                              setDialogueStep((s) => s + 1);
+                            }}
+                            className="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer transition"
+                          >
+                            <span>Continue Story</span>
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              sound.playBeep(640, 0.06);
+                              setStoryBeat('experiment');
+                            }}
+                            className="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-amber-500/20 cursor-pointer transition"
+                          >
+                            <span>Wake Up the Instrument</span>
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Optional Collapsible Historical Field Notes (Closed by default to prevent visual clutter) */}
+                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/60 overflow-hidden">
                       <button
                         type="button"
-                        disabled={dialogueStep === currentChapter.dialogueIntro.length - 1}
-                        onClick={() => {
-                          sound.playBeep(560, 0.04);
-                          setDialogueStep((s) =>
-                            Math.min(currentChapter.dialogueIntro.length - 1, s + 1)
-                          );
-                        }}
-                        className="min-h-[38px] px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-zinc-950 font-bold text-xs font-mono-tech flex items-center gap-1 cursor-pointer transition"
+                        onClick={() => setShowFieldNotes((v) => !v)}
+                        aria-expanded={showFieldNotes}
+                        className="w-full min-h-[48px] px-5 py-3.5 flex items-center justify-between text-left text-xs sm:text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition cursor-pointer"
                       >
-                        Next Transmission
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Interactive 2D Canvas Simulator */}
-                  <div className="pt-2 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-display font-bold text-sm sm:text-base text-amber-400">
-                        {currentChapter.miniGameTitle}
-                      </h3>
-                      {completedGames.includes(currentChapter.id) && (
-                        <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-mono-tech flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          Simulation Complete
+                        <span className="flex items-center gap-2 font-medium">
+                          <BookOpen className="w-4 h-4 text-amber-400" />
+                          <span>
+                            Want the deeper history? Read NASA Field Notes & {chapterArtifacts.length} NSSDCA Records
+                          </span>
                         </span>
-                      )}
-                    </div>
-                    <p className="text-xs sm:text-sm text-[var(--color-muted-foreground)]">
-                      {currentChapter.miniGameInstruction}
-                    </p>
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform ${
+                            showFieldNotes ? 'rotate-180' : ''
+                          }`}
+                        />
+                      </button>
 
-                    <MiniGameContainer
-                      chapterId={currentChapter.id}
-                      isCompleted={completedGames.includes(currentChapter.id)}
-                      onComplete={() => handleCompleteMiniGame(currentChapter.id)}
-                    />
-
-                    <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-200 font-mono-tech">
-                      {currentChapter.miniGameScienceNote}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column (5 cols): Scientific Context + Chapter Hardware Cards + Quiz */}
-              <div className="lg:col-span-5 space-y-6">
-                {/* Historical & Scientific Context Card */}
-                <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 space-y-3 shadow-sm">
-                  <div className="flex items-center gap-2 text-amber-400 font-mono-tech text-xs uppercase font-bold">
-                    <BookOpen className="w-4 h-4" />
-                    <span>Historical & Scientific Briefing</span>
-                  </div>
-                  <p className="text-sm leading-relaxed text-[var(--color-foreground)]/90">
-                    {currentChapter.scientificContext}
-                  </p>
-
-                  {/* Artifacts Featured in This Chapter */}
-                  <div className="pt-2 space-y-2">
-                    <div className="text-xs font-mono-tech uppercase text-[var(--color-muted-foreground)]">
-                      NSSDCA Hardware Featured in Chapter {currentChapter.id}:
-                    </div>
-                    <div className="space-y-2">
-                      {chapterArtifacts.map((art) => (
-                        <div
-                          key={art.id}
-                          className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] space-y-1.5"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-bold text-xs sm:text-sm text-amber-400">
-                              {art.name}
-                            </span>
-                            <span className="text-[11px] font-mono-tech px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 shrink-0">
-                              {art.nssdcaId}
-                            </span>
-                          </div>
-                          <p className="text-xs text-[var(--color-muted-foreground)]">
-                            <strong>Why Left Behind:</strong> {art.whyLeftBehind}
+                      {showFieldNotes && (
+                        <div className="px-5 pb-5 pt-2 border-t border-[var(--color-border)] space-y-4 text-sm leading-relaxed story-beat-enter">
+                          <p className="text-[var(--color-foreground)]/90">
+                            {currentChapter.scientificContext}
                           </p>
-                          <div className="flex items-center justify-between pt-1 text-[11px] font-mono-tech">
-                            <span className="text-cyan-400 flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {art.locationName}
-                            </span>
-                            <a
-                              href={art.officialUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-amber-400 hover:underline flex items-center gap-1"
-                            >
-                              NASA Record <ExternalLink className="w-3 h-3" />
-                            </a>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            {chapterArtifacts.map((art) => (
+                              <div
+                                key={art.id}
+                                className="p-3.5 rounded-xl bg-[var(--color-card)] border border-[var(--color-border)] space-y-1.5"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="font-semibold text-xs text-amber-400">
+                                    {art.name}
+                                  </span>
+                                  <span className="text-[11px] font-mono-tech text-[var(--color-muted-foreground)]">
+                                    {art.nssdcaId}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-[var(--color-muted-foreground)]">
+                                  {art.whyLeftBehind}
+                                </p>
+                                <div className="flex items-center justify-between pt-1 text-[11px]">
+                                  <span className="text-cyan-400 flex items-center gap-1">
+                                    <MapPin className="w-3 h-3" />
+                                    {art.locationName}
+                                  </span>
+                                  <a
+                                    href={art.officialUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-amber-400 hover:underline flex items-center gap-1"
+                                  >
+                                    NASA Page <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
-                </div>
+                )}
 
-                {/* Chapter Science Verification Quiz */}
-                <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 space-y-4 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono-tech uppercase font-bold text-cyan-400 flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4" />
-                      Archivist Science Verification Quiz
-                    </span>
-                    {completedQuizzes.includes(currentChapter.id) && (
-                      <span className="text-xs font-mono-tech text-emerald-400 font-bold flex items-center gap-1">
-                        <CheckCircle2 className="w-4 h-4" /> Verified
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="font-semibold text-sm">{currentChapter.quiz.question}</p>
-
-                  <div className="space-y-2">
-                    {currentChapter.quiz.options.map((opt, idx) => {
-                      const chosen = selectedQuizOption[currentChapter.id] === idx;
-                      const isCorrect = idx === currentChapter.quiz.correctIndex;
-                      let btnStyle =
-                        'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-muted)]';
-                      if (chosen && isCorrect) {
-                        btnStyle = 'border-emerald-500 bg-emerald-500/20 text-emerald-200';
-                      } else if (chosen && !isCorrect) {
-                        btnStyle = 'border-rose-500 bg-rose-500/20 text-rose-200';
-                      }
-
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() =>
-                            handleSelectQuiz(
-                              currentChapter.id,
-                              idx,
-                              currentChapter.quiz.correctIndex
-                            )
-                          }
-                          className={`w-full min-h-[44px] p-3 rounded-xl border text-left text-xs sm:text-sm transition cursor-pointer flex items-start gap-2.5 ${btnStyle}`}
-                        >
-                          <span className="font-mono-tech font-bold text-amber-400 shrink-0">
-                            {String.fromCharCode(65 + idx)}.
+                {/* =========================================================
+                    BEAT 2: THE INSTRUMENT (FOCUSED INTERACTIVE SIMULATION)
+                ========================================================= */}
+                {storyBeat === 'experiment' && (
+                  <div className="space-y-6 story-beat-enter">
+                    <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 sm:p-8 shadow-xl space-y-5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <span className="text-xs font-mono-tech text-amber-400">
+                            Hands-On Telemetry Reconstruction
                           </span>
-                          <span>{opt}</span>
+                          <h2 className="font-display text-lg sm:text-xl font-bold mt-0.5">
+                            {currentChapter.miniGameTitle}
+                          </h2>
+                        </div>
+                        {isCurrentGameDone && (
+                          <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-medium flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Telemetry Restored
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-sm text-[var(--color-muted-foreground)] leading-relaxed">
+                        {currentChapter.miniGameInstruction}
+                      </p>
+
+                      <MiniGameContainer
+                        chapterId={currentChapter.id}
+                        isCompleted={isCurrentGameDone}
+                        onComplete={() => handleCompleteMiniGame(currentChapter.id)}
+                      />
+
+                      <div className="p-3.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] text-xs text-[var(--color-muted-foreground)] leading-relaxed">
+                        <strong className="text-[var(--color-foreground)]">Real NASA Science: </strong>
+                        {currentChapter.miniGameScienceNote}
+                      </div>
+
+                      {/* Navigation Footer */}
+                      <div className="flex items-center justify-between gap-4 pt-3 border-t border-[var(--color-border)]">
+                        <button
+                          type="button"
+                          onClick={() => setStoryBeat('story')}
+                          className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-xs sm:text-sm font-medium flex items-center gap-1.5 cursor-pointer transition"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                          <span>Back to Story</span>
                         </button>
-                      );
-                    })}
-                  </div>
 
-                  {selectedQuizOption[currentChapter.id] !== undefined && (
-                    <div
-                      className={`p-3.5 rounded-xl text-xs leading-relaxed border ${
-                        selectedQuizOption[currentChapter.id] === currentChapter.quiz.correctIndex
-                          ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-200'
-                          : 'bg-rose-500/15 border-rose-500/40 text-rose-200'
-                      }`}
-                    >
-                      <strong>
-                        {selectedQuizOption[currentChapter.id] === currentChapter.quiz.correctIndex
-                          ? 'Correct! '
-                          : 'Not quite — try again! '}
-                      </strong>
-                      {currentChapter.quiz.explanation}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sound.playBeep(660, 0.05);
+                            setStoryBeat('reflection');
+                          }}
+                          className={`min-h-[44px] px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition ${
+                            isCurrentGameDone
+                              ? 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-md shadow-emerald-500/20'
+                              : 'bg-amber-500 hover:bg-amber-400 text-zinc-950'
+                          }`}
+                        >
+                          <span>Continue to Reflection</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* Next Chapter Button */}
-                  {activeChapterId < 5 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        sound.playBeep(660, 0.06);
-                        setActiveChapterId((id) => Math.min(5, id + 1));
-                        setDialogueStep(0);
-                      }}
-                      className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs font-mono-tech transition cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      <span>Proceed to Chapter {activeChapterId + 1}</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
+                {/* =========================================================
+                    BEAT 3: REFLECTION & NEXT DESTINATION
+                ========================================================= */}
+                {storyBeat === 'reflection' && (
+                  <div className="space-y-6 story-beat-enter">
+                    <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 sm:p-10 shadow-xl space-y-6">
+                      <div className="space-y-1">
+                        <span className="text-xs font-mono-tech text-amber-400">
+                          Archivist Memory Log • Chapter {currentChapter.id}
+                        </span>
+                        <h2 className="text-lg sm:text-xl font-semibold leading-snug">
+                          {currentChapter.quiz.question}
+                        </h2>
+                      </div>
+
+                      <div className="space-y-3">
+                        {currentChapter.quiz.options.map((opt, idx) => {
+                          const chosen = selectedQuizOption[currentChapter.id] === idx;
+                          const isCorrect = idx === currentChapter.quiz.correctIndex;
+                          let btnStyle =
+                            'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-muted)]';
+                          if (chosen && isCorrect) {
+                            btnStyle = 'border-emerald-500 bg-emerald-500/15 text-emerald-200';
+                          } else if (chosen && !isCorrect) {
+                            btnStyle = 'border-rose-500 bg-rose-500/15 text-rose-200';
+                          }
+
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() =>
+                                handleSelectQuiz(
+                                  currentChapter.id,
+                                  idx,
+                                  currentChapter.quiz.correctIndex
+                                )
+                              }
+                              className={`w-full min-h-[52px] p-4 rounded-2xl border text-left text-sm sm:text-base transition cursor-pointer flex items-start gap-3 ${btnStyle}`}
+                            >
+                              <span className="font-mono-tech font-bold text-amber-400 shrink-0 mt-0.5">
+                                {String.fromCharCode(65 + idx)}.
+                              </span>
+                              <span>{opt}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {selectedQuizOption[currentChapter.id] !== undefined && (
+                        <div
+                          className={`p-4 rounded-2xl text-sm leading-relaxed border story-beat-enter ${
+                            selectedQuizOption[currentChapter.id] === currentChapter.quiz.correctIndex
+                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
+                              : 'bg-rose-500/10 border-rose-500/30 text-rose-200'
+                          }`}
+                        >
+                          <strong>
+                            {selectedQuizOption[currentChapter.id] === currentChapter.quiz.correctIndex
+                              ? 'Memory Verified — '
+                              : 'Not quite — '}
+                          </strong>
+                          {currentChapter.quiz.explanation}
+                        </div>
+                      )}
+
+                      {/* Footer Navigation to Next Chapter */}
+                      <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[var(--color-border)]">
+                        <button
+                          type="button"
+                          onClick={() => setStoryBeat('experiment')}
+                          className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-xs sm:text-sm font-medium flex items-center gap-1.5 cursor-pointer transition"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                          <span>Back to Instrument</span>
+                        </button>
+
+                        {activeChapterId < 5 ? (
+                          <button
+                            type="button"
+                            onClick={() => selectChapter(activeChapterId + 1)}
+                            className="min-h-[48px] px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer transition"
+                          >
+                            <span>
+                              Travel to Chapter {activeChapterId + 1}: {chapterShortNames[activeChapterId + 1]}
+                            </span>
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              sound.playSuccessChord();
+                              setShowCertificateModal(true);
+                            }}
+                            className="min-h-[48px] px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer transition"
+                          >
+                            <Sparkles className="w-4 h-4" />
+                            <span>Complete Journey & View Certificate</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
-            {/* Grand Finale Reunion & Archivist Certificate (Unlocked at 100% or via Judge Unlock) */}
-            {totalProgress === 100 && (
-              <section className="rounded-2xl border-2 border-amber-400 bg-gradient-to-br from-amber-500/15 via-zinc-900 to-emerald-500/15 p-6 sm:p-8 text-center space-y-4 shadow-xl">
-                <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-mono-tech font-bold">
+            {/* SCENE C: EPILOGUE & ARCHIVIST CERTIFICATE */}
+            {showCertificateModal && (
+              <section className="story-beat-enter rounded-3xl border border-amber-400/50 bg-[var(--color-card)] p-6 sm:p-10 text-center space-y-6 shadow-2xl">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-mono-tech">
                   <Sparkles className="w-4 h-4" />
-                  ALL 5 SOLAR SYSTEM MONUMENT ARCHIVES RESTORED!
+                  <span>Epilogue • All 5 Frontiers Remembered ({totalProgress}% Verified)</span>
                 </div>
+
                 <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-amber-400">
-                  Official NASA Space Apps 2026 — Deep Space Heritage Archivist Certificate
+                  Deep Space Heritage Archivist Certificate
                 </h2>
-                <p className="text-sm text-zinc-300 max-w-2xl mx-auto">
-                  Congratulations! From Eagle’s Descent Stage and ALSEP’s laser mirrors on the Moon to Opportunity, InSight, Ingenuity, Dawn, NEAR Shoemaker, Kepler, and Pioneer 10, you have preserved the science of humanity’s silent pioneers.
+
+                <p className="text-sm sm:text-base text-[var(--color-muted-foreground)] max-w-xl mx-auto leading-relaxed">
+                  From Eagle’s Descent Stage on the Moon to Opportunity, InSight, Ingenuity on Mars, and Pioneer 10 drifting toward the stars, their voices and scientific legacy now live on through you.
                 </p>
+
                 <div className="max-w-md mx-auto flex flex-col sm:flex-row items-center gap-2 pt-2">
                   <label htmlFor="archivist-name-input" className="sr-only">
                     Your Archivist Name
@@ -560,27 +792,38 @@ export function App() {
                     type="text"
                     value={explorerName}
                     onChange={(e) => setExplorerName(e.target.value)}
-                    placeholder="Enter your name for the certificate"
-                    className="w-full min-h-[44px] px-3.5 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-sm font-mono-tech text-center text-amber-300"
+                    placeholder="Enter your name"
+                    className="w-full min-h-[44px] px-4 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-mono-tech text-center text-amber-300"
                   />
                   <button
                     type="button"
                     onClick={() => window.print()}
-                    className="min-h-[44px] px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs font-mono-tech shrink-0 cursor-pointer transition"
+                    className="min-h-[44px] px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs font-mono-tech shrink-0 cursor-pointer transition"
                   >
                     Print Certificate
                   </button>
                 </div>
-                <div className="max-w-xl mx-auto mt-4 p-5 rounded-xl bg-zinc-950/90 border border-amber-500/40 font-mono-tech text-xs space-y-1.5 text-zinc-300">
+
+                <div className="max-w-xl mx-auto p-6 rounded-2xl bg-zinc-950/90 border border-amber-500/30 font-mono-tech text-xs space-y-2 text-zinc-300">
                   <div className="text-amber-400 font-bold text-sm">
-                    CERTIFIED JUNIOR DEEP SPACE ARCHIVIST: {explorerName.toUpperCase()}
+                    JUNIOR DEEP SPACE ARCHIVIST: {explorerName.toUpperCase()}
                   </div>
                   <div>
-                    VERIFIED MISSIONS: Apollo 11/15 • Surveyor 3 • Viking 1/2 • Sojourner • Spirit/Opportunity • Phoenix/InSight • Ingenuity • NEAR Shoemaker • Dawn • Kepler • Pioneer 10/11
+                    MISSIONS RESTORED: Apollo 11/15 • Surveyor 3 • Viking 1/2 • Sojourner • Spirit & Opportunity • Phoenix & InSight • Ingenuity • NEAR Shoemaker • Dawn • Kepler • Pioneer 10/11
                   </div>
                   <div className="text-emerald-400">
-                    STATUS: 100% TELEMETRY & SCIENTIFIC LEGACY PRESERVED
+                    2026 NASA INTERNATIONAL SPACE APPS CHALLENGE • ABANDONED BUT NOT FORGOTTEN
                   </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => selectChapter(1)}
+                    className="text-xs font-mono-tech text-[var(--color-muted-foreground)] hover:text-amber-400 underline cursor-pointer"
+                  >
+                    Return to Chapter 1
+                  </button>
                 </div>
               </section>
             )}
@@ -588,22 +831,21 @@ export function App() {
         )}
 
         {/* ===================================================================
-            TAB 2: COMPLETE NSSDCA 13-HARDWARE INTERACTIVE ENCYCLOPEDIA
+            VIEW 2: COMPLETE NSSDCA 13-HARDWARE INTERACTIVE ENCYCLOPEDIA
         =================================================================== */}
         {activeTab === 'catalog' && (
-          <div className="space-y-6">
+          <div className="max-w-6xl mx-auto space-y-6 story-beat-enter">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h1 className="font-display text-2xl font-extrabold text-amber-400">
-                  Official NSSDCA Discarded Hardware Catalog (All 13 Suites)
+                  NASA NSSDCA Discarded Hardware Archive (13 Suites)
                 </h1>
-                <p className="text-xs sm:text-sm text-[var(--color-muted-foreground)]">
-                  Every historical spacecraft, lander, rover, helicopter, and probe listed in the official 2026 Challenge Resources tab.
+                <p className="text-sm text-[var(--color-muted-foreground)]">
+                  Explore every historical spacecraft, lander, rover, helicopter, and probe from the official challenge brief.
                 </p>
               </div>
 
-              {/* Filter Pills */}
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
                 {['All', 'Moon', 'Mars', 'Asteroid / Dwarf Planet', 'Deep Space / Heliocentric'].map(
                   (body) => (
                     <button
@@ -613,10 +855,10 @@ export function App() {
                         sound.playBeep(500, 0.04);
                         setBodyFilter(body);
                       }}
-                      className={`min-h-[40px] px-3.5 py-1.5 rounded-lg text-xs font-mono-tech font-bold transition cursor-pointer ${
+                      className={`min-h-[38px] px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                         bodyFilter === body
-                          ? 'bg-amber-500 text-zinc-950'
-                          : 'bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-[var(--color-foreground)] border border-[var(--color-border)]'
+                          ? 'bg-amber-500 text-zinc-950 font-semibold'
+                          : 'bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-[var(--color-muted-foreground)] border border-[var(--color-border)]'
                       }`}
                     >
                       {body}
@@ -627,7 +869,6 @@ export function App() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Artifact Grid (7 cols) */}
               <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {filteredArtifacts.map((item) => {
                   const isSelected = selectedArtifact?.id === item.id;
@@ -639,17 +880,15 @@ export function App() {
                         sound.playBeep(600, 0.04);
                         setSelectedArtifact(item);
                       }}
-                      className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between gap-3 ${
+                      className={`p-4 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-3 ${
                         isSelected
-                          ? 'border-amber-400 bg-amber-500/15 ring-2 ring-amber-400/30'
+                          ? 'border-amber-400 bg-amber-500/10'
                           : 'border-[var(--color-border)] bg-[var(--color-card)] hover:bg-[var(--color-surface)]'
                       }`}
                     >
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between gap-2 text-[11px] font-mono-tech">
-                          <span className="px-2 py-0.5 rounded bg-zinc-800 text-amber-300 font-bold">
-                            NSSDCA: {item.nssdcaId}
-                          </span>
+                          <span className="text-amber-400">{item.nssdcaId}</span>
                           <span className="text-cyan-400">{item.celestialBody}</span>
                         </div>
                         <h3 className="font-display font-bold text-sm leading-snug">
@@ -659,7 +898,7 @@ export function App() {
                           {item.tagline}
                         </p>
                       </div>
-                      <div className="flex items-center justify-between text-[11px] font-mono-tech pt-2 border-t border-[var(--color-border)]">
+                      <div className="flex items-center justify-between text-[11px] font-mono-tech pt-2 border-t border-[var(--color-border)] text-[var(--color-muted-foreground)]">
                         <span className="text-emerald-400">{item.status}</span>
                         <span>{item.massKg} kg</span>
                       </div>
@@ -668,42 +907,39 @@ export function App() {
                 })}
               </div>
 
-              {/* Detailed NSSDCA Inspector Dossier (5 cols) */}
               <div className="lg:col-span-5">
                 {selectedArtifact && (
-                  <div className="sticky top-20 rounded-2xl border border-amber-500/40 bg-[var(--color-card)] p-5 space-y-4 shadow-lg">
-                    <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] pb-3">
-                      <div>
-                        <span className="text-xs font-mono-tech text-amber-400 font-bold">
-                          NSSDCA ID: {selectedArtifact.nssdcaId} • Launched {selectedArtifact.launchYear}
-                        </span>
-                        <h2 className="font-display text-lg font-extrabold mt-0.5">
-                          {selectedArtifact.name}
-                        </h2>
-                        <p className="text-xs text-cyan-400 font-mono-tech mt-0.5">
-                          Location: {selectedArtifact.locationName} ({selectedArtifact.coordinates})
-                        </p>
-                      </div>
+                  <div className="sticky top-24 rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 space-y-4 shadow-xl">
+                    <div className="border-b border-[var(--color-border)] pb-3">
+                      <span className="text-xs font-mono-tech text-amber-400">
+                        NSSDCA {selectedArtifact.nssdcaId} • Launched {selectedArtifact.launchYear}
+                      </span>
+                      <h2 className="font-display text-lg font-extrabold mt-0.5">
+                        {selectedArtifact.name}
+                      </h2>
+                      <p className="text-xs text-cyan-400 font-mono-tech mt-0.5">
+                        {selectedArtifact.locationName} ({selectedArtifact.coordinates})
+                      </p>
                     </div>
 
-                    <blockquote className="p-3.5 rounded-xl bg-zinc-950 border-l-4 border-amber-400 text-xs sm:text-sm font-mono-tech italic text-amber-100">
-                      "{selectedArtifact.firstPersonVoice}"
+                    <blockquote className="p-4 rounded-2xl bg-[var(--color-surface)] border-l-4 border-amber-400 text-sm italic text-[var(--color-foreground)]/90">
+                      “{selectedArtifact.firstPersonVoice}”
                     </blockquote>
 
-                    <div className="space-y-2 text-xs sm:text-sm">
-                      <h4 className="font-mono-tech font-bold text-amber-400 uppercase text-xs">
-                        Why It Was Left Behind & Current Status
+                    <div className="space-y-1.5 text-xs sm:text-sm">
+                      <h4 className="font-semibold text-amber-400 text-xs">
+                        Why It Was Left Behind
                       </h4>
-                      <p className="text-[var(--color-foreground)]/90 leading-relaxed">
+                      <p className="text-[var(--color-muted-foreground)] leading-relaxed">
                         {selectedArtifact.whyLeftBehind}
                       </p>
                     </div>
 
-                    <div className="space-y-2 text-xs sm:text-sm">
-                      <h4 className="font-mono-tech font-bold text-emerald-400 uppercase text-xs">
-                        Breakthrough Science It Made Possible
+                    <div className="space-y-1.5 text-xs sm:text-sm">
+                      <h4 className="font-semibold text-emerald-400 text-xs">
+                        Scientific Legacy
                       </h4>
-                      <ul className="space-y-1.5 list-disc list-inside text-[var(--color-foreground)]/90">
+                      <ul className="space-y-1 list-disc list-inside text-[var(--color-muted-foreground)]">
                         {selectedArtifact.scienceBreakthroughs.map((b, i) => (
                           <li key={i} className="leading-relaxed">
                             {b}
@@ -712,40 +948,25 @@ export function App() {
                       </ul>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] space-y-1.5 text-xs font-mono-tech">
-                      <div>
-                        <strong className="text-cyan-400">POWER SOURCE:</strong>{' '}
-                        {selectedArtifact.engineeringSpecs.powerSource}
-                      </div>
-                      <div>
-                        <strong className="text-cyan-400">INSTRUMENTS:</strong>{' '}
-                        {selectedArtifact.engineeringSpecs.primaryInstruments}
-                      </div>
-                      <div>
-                        <strong className="text-cyan-400">ACTIVE DURATION:</strong>{' '}
-                        {selectedArtifact.engineeringSpecs.missionDuration}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <div className="flex flex-wrap items-center gap-2 pt-2">
                       <a
                         href={selectedArtifact.officialUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs font-mono-tech flex items-center justify-center gap-2 transition"
+                        className="flex-1 min-h-[42px] px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs flex items-center justify-center gap-1.5 transition"
                       >
-                        <span>Open Official NASA / NSSDCA Page</span>
-                        <ExternalLink className="w-4 h-4" />
+                        <span>Official NASA Archive</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                       <button
                         type="button"
                         onClick={() => {
-                          setActiveChapterId(selectedArtifact.chapterId);
+                          selectChapter(selectedArtifact.chapterId);
                           setActiveTab('quest');
                         }}
-                        className="min-h-[44px] px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-mono-tech text-xs font-bold cursor-pointer transition"
+                        className="min-h-[42px] px-4 py-2 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-xs font-medium cursor-pointer transition"
                       >
-                        Play Chapter {selectedArtifact.chapterId}
+                        Visit in Chapter {selectedArtifact.chapterId}
                       </button>
                     </div>
                   </div>
@@ -756,152 +977,68 @@ export function App() {
         )}
 
         {/* ===================================================================
-            TAB 3: READY-TO-SUBMIT KIT (7-SLIDE DECK, 30s SCRIPT, SI DISCLOSURE)
+            VIEW 3: SUBMISSION KIT & 7-SLIDE DECK
         =================================================================== */}
         {activeTab === 'judge' && (
-          <div className="space-y-8">
-            <div className="rounded-2xl border border-amber-500/40 bg-[var(--color-card)] p-6 space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <span className="text-xs font-mono-tech uppercase text-amber-400 font-bold">
-                    2026 NASA SPACE APPS SUBMISSION KIT • READY TO COPY & PASTE
-                  </span>
-                  <h1 className="font-display text-2xl font-extrabold mt-0.5">
-                    7-Slide Presentation Deck, 30s Video Script & Mandatory SI Disclosure
-                  </h1>
-                </div>
-                <a
-                  href="/slides.html"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="min-h-[44px] px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs font-mono-tech flex items-center gap-2 transition"
-                >
-                  <Play className="w-4 h-4" />
-                  <span>Open Fullscreen 7-Slide Deck (/slides.html)</span>
-                </a>
+          <div className="max-w-5xl mx-auto space-y-8 story-beat-enter">
+            <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 sm:p-8 flex flex-wrap items-center justify-between gap-4">
+              <div className="space-y-1 max-w-xl">
+                <span className="text-xs font-mono-tech text-amber-400">
+                  2026 NASA Space Apps Challenge Submission Kit
+                </span>
+                <h1 className="font-display text-2xl font-extrabold">
+                  7-Slide Presentation Deck & Ready-to-Paste Copy
+                </h1>
+                <p className="text-xs sm:text-sm text-[var(--color-muted-foreground)]">
+                  Solo participant note: Register under a <strong>Local Event</strong> (1–6 team members allowed) so you qualify for Global Judging.
+                </p>
               </div>
-              <p className="text-xs sm:text-sm text-[var(--color-muted-foreground)]">
-                Important Reminder from the <strong>2026 Judging & Awards Guide</strong>: Because you are competing <strong>solo (1 person)</strong>, make sure your registration on <code>spaceappschallenge.org</code> is set to a <strong>Local Event</strong> (which allows 1–6 members) rather than the Universal Event (which requires 2–6 members) so you qualify for Global Judging!
-              </p>
+              <a
+                href="/slides.html"
+                target="_blank"
+                rel="noreferrer"
+                className="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm flex items-center gap-2 transition"
+              >
+                <Play className="w-4 h-4" />
+                <span>Open Fullscreen 7-Slide Deck</span>
+              </a>
             </div>
 
-            {/* 7-Slide Presentation Preview Grid */}
-            <section className="space-y-3">
-              <h2 className="font-display text-lg font-bold text-amber-400 flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                <span>Official 7-Slide Presentation Outline (Strict 7-Slide Limit Compliant)</span>
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[
-                  {
-                    slide: 'Slide 1 — Title & Mission Hook',
-                    title: 'SILENT MONUMENTS: Echoes of Moon, Mars & Deep Space',
-                    bullets: [
-                      'Challenge: Abandoned but not Forgotten (2026 NASA Space Apps)',
-                      'Tagline: Turning NASA’s discarded off-world hardware into an interactive 2D retro-telemetry adventure for school-age & casual learners.',
-                      'Live Demo + Open-Source Repository + 13 NSSDCA Archives.'
-                    ]
-                  },
-                  {
-                    slide: 'Slide 2 — The Problem & Educational Gap',
-                    title: 'Why "Space Junk" Is Actually Priceless Human Heritage',
-                    bullets: [
-                      'Students hear about active rovers like Perseverance, but rarely learn about the 60+ years of silent pioneers that made today’s missions possible.',
-                      'Dense technical archives (NSSDCA) are hard for younger learners to explore without narrative context or interactive play.'
-                    ]
-                  },
-                  {
-                    slide: 'Slide 3 — Our Solution & Story Quest Architecture',
-                    title: 'Stepping Into Junior Archivist Maya’s Boots',
-                    bullets: [
-                      '5 Story-Driven Chapters across the Moon, Mars, Asteroids (433 Eros & Ceres), and Deep Space.',
-                      'First-person hardware transmissions ("I am Eagle’s Descent Stage...", "I am Opportunity...") connect engineering trade-offs to human emotion.'
-                    ]
-                  },
-                  {
-                    slide: 'Slide 4 — 5 Hands-On 2D Instrument Mini-Games',
-                    title: 'Learning Real Space Physics Through Play',
-                    bullets: [
-                      'Ch 1: Apollo 15 LRV Crater Traverse + ALSEP 45° Laser Retroreflector Lock.',
-                      'Ch 2: Opportunity Hematite Survey + 2018 Dust Storm (Tau Opacity) Slider.',
-                      'Ch 3–5: InSight Marsquake Core Tuner, Ingenuity 2,400 RPM Flight, & 70m DSN Dish Decoder.'
-                    ]
-                  },
-                  {
-                    slide: 'Slide 5 — Grounding in Authentic NASA & NSSDCA Data',
-                    title: '100% Complete Coverage of All 13 Challenge Resource Suites',
-                    bullets: [
-                      'Direct NSSDCA IDs, coordinates, launch/end dates, and specs for Apollo LM, LRV, ALSEP, Surveyor, Viking 1/2, Sojourner, Spirit/Oppy, Phoenix/InSight, Ingenuity, NEAR, Dawn, Kepler & Pioneer 10/11.',
-                      'Interactive Encyclopedia with direct links to nssdc.gsfc.nasa.gov.'
-                    ]
-                  },
-                  {
-                    slide: 'Slide 6 — Technical Stack, Accessibility & SI Usage',
-                    title: 'Zero-Budget, Browser-First, Accessible Anywhere',
-                    bullets: [
-                      'Built with React, TypeScript, Tailwind CSS, HTML5 2D Canvas, and a custom zero-dependency Web Audio API procedural telemetry synthesizer.',
-                      'WCAG contrast compliant (Dark/Light modes), keyboard + touch controls, and transparent Super Intelligence (SI) disclosure.'
-                    ]
-                  },
-                  {
-                    slide: 'Slide 7 — Impact, Classroom Value & Future Roadmap',
-                    title: 'Inspiring the Artemis Generation',
-                    bullets: [
-                      'Includes an instant-print Junior Deep Space Archivist Certificate for classrooms and museums.',
-                      'Future expansion: WebXR 3D surface inspection of Apollo & Mars landing sites using LRO and HiRISE digital elevation models.'
-                    ]
-                  }
-                ].map((s, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] space-y-2"
-                  >
-                    <div className="text-xs font-mono-tech text-amber-400 font-bold">{s.slide}</div>
-                    <h3 className="font-display font-bold text-sm">{s.title}</h3>
-                    <ul className="text-xs text-[var(--color-muted-foreground)] space-y-1 list-disc list-inside">
-                      {s.bullets.map((b, i) => (
-                        <li key={i}>{b}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Copy-Paste Submission Fields */}
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 30-Second Video Script */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-display font-bold text-sm text-cyan-400">
-                    30-Second Demo Video Script (Strict 30s Limit)
+                  <h3 className="font-bold text-sm text-amber-400">
+                    High-Level Summary (Copy for Submission Form)
                   </h3>
                   <button
                     type="button"
                     onClick={() =>
                       copyText(
-                        'video',
-                        `[0:00–0:06] Since the 1960s, NASA has left heroic machines across the Solar System—not as junk, but as monuments to discovery. Welcome to Silent Monuments!\n[0:06–0:15] As Junior Archivist Maya, students journey across 5 chapters on the Moon, Mars, and Deep Space—hearing first-person transmissions from Apollo’s Moon Buggy, Opportunity, InSight, Ingenuity, and Pioneer 10.\n[0:15–0:24] In 5 hands-on 2D mini-games grounded in NASA’s NSSDCA archive, players bounce Earth lasers off Apollo retroreflectors, survive Mars’s 2018 dust storm, tune marsquake waves, and fly Ingenuity at 2,400 RPM.\n[0:24–0:30] Complete the archive to earn your Junior Space Archivist Certificate—preserving NASA’s silent pioneers for the Artemis generation!`
+                        'summary',
+                        'Silent Monuments is an interactive story quest and NSSDCA archive that brings NASA’s discarded off-world hardware back to life for school-age and casual learners. Stepping into the boots of Junior Archivist Maya, players journey across 5 chapters on the Moon, Mars, Asteroids, and Deep Space—hearing first-person stories from Apollo’s Moon Buggy, Opportunity, InSight, Ingenuity, and Pioneer 10, and operating each instrument in hands-on 2D simulations grounded in real NASA data.'
                       )
                     }
-                    className="min-h-[36px] px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-mono-tech text-zinc-200 flex items-center gap-1.5 cursor-pointer"
+                    className="min-h-[34px] px-3 py-1 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-xs flex items-center gap-1.5 cursor-pointer"
                   >
-                    {copiedSection === 'video' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedSection === 'video' ? 'Copied!' : 'Copy Script'}</span>
+                    {copiedSection === 'summary' ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" /> Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" /> Copy
+                      </>
+                    )}
                   </button>
                 </div>
-                <pre className="p-3.5 rounded-xl bg-zinc-950 text-zinc-300 text-xs font-mono-tech whitespace-pre-wrap leading-relaxed">
-{`[0:00–0:06] Since the 1960s, NASA has left heroic machines across the Solar System—not as junk, but as monuments to discovery. Welcome to Silent Monuments!
-[0:06–0:15] As Junior Archivist Maya, students journey across 5 chapters on the Moon, Mars, and Deep Space—hearing first-person transmissions from Apollo’s Moon Buggy, Opportunity, InSight, Ingenuity, and Pioneer 10.
-[0:15–0:24] In 5 hands-on 2D mini-games grounded in NASA’s NSSDCA archive, players bounce Earth lasers off Apollo retroreflectors, survive Mars’s 2018 dust storm, tune marsquake waves, and fly Ingenuity at 2,400 RPM.
-[0:24–0:30] Complete the archive to earn your Junior Space Archivist Certificate—preserving NASA’s silent pioneers for the Artemis generation!`}
-                </pre>
+                <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed">
+                  Silent Monuments is an interactive story quest and NSSDCA archive that brings NASA’s discarded off-world hardware back to life for school-age and casual learners. Stepping into the boots of Junior Archivist Maya, players journey across 5 chapters on the Moon, Mars, Asteroids, and Deep Space—hearing first-person stories from Apollo’s Moon Buggy, Opportunity, InSight, Ingenuity, and Pioneer 10, and operating each instrument in hands-on 2D simulations grounded in real NASA data.
+                </p>
               </div>
 
-              {/* Mandatory SI / AI Disclosure Text */}
               <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-display font-bold text-sm text-emerald-400">
+                  <h3 className="font-bold text-sm text-emerald-400">
                     Mandatory Super Intelligence (SI / AI) Disclosure
                   </h3>
                   <button
@@ -909,55 +1046,30 @@ export function App() {
                     onClick={() =>
                       copyText(
                         'si',
-                        `Use of Super Intelligence (SI) Tools:\nIn accordance with the 2026 NASA Space Apps Challenge rules, Super Intelligence (SI) coding and design assistants were used as supportive development tools:\n1. Architecture & Ideation: Assisted in structuring the 5-chapter interactive story flow and designing the HTML5 Canvas 2D physics/telemetry mini-games.\n2. Code Implementation & Accessibility: Assisted in writing TypeScript/React components, responsive Tailwind CSS styling, and the procedural Web Audio API sound synthesizer.\n3. Scientific Verification: All spacecraft parameters, NSSDCA IDs, coordinates, mission durations, and scientific discoveries were cross-verified directly against official NASA NSSDCA (nssdc.gsfc.nasa.gov) and NASA Science Mission Directorate archives.`
+                        'In accordance with the 2026 NASA Space Apps Challenge guidelines, Super Intelligence (SI) tools were used to assist with structuring the 5-chapter interactive story flow, scaffolding the React/TypeScript UI and HTML5 2D Canvas instrument simulations, and synthesizing procedural Web Audio API sound effects. All spacecraft IDs, landing coordinates, dates, mass specifications, and scientific discoveries were verified directly against official NASA NSSDCA (nssdc.gsfc.nasa.gov) and NASA Science Mission Directorate documentation.'
                       )
                     }
-                    className="min-h-[36px] px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-mono-tech text-zinc-200 flex items-center gap-1.5 cursor-pointer"
+                    className="min-h-[34px] px-3 py-1 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-xs flex items-center gap-1.5 cursor-pointer"
                   >
-                    {copiedSection === 'si' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedSection === 'si' ? 'Copied!' : 'Copy SI Text'}</span>
+                    {copiedSection === 'si' ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" /> Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" /> Copy
+                      </>
+                    )}
                   </button>
                 </div>
-                <pre className="p-3.5 rounded-xl bg-zinc-950 text-zinc-300 text-xs font-mono-tech whitespace-pre-wrap leading-relaxed">
-{`Use of Super Intelligence (SI) Tools:
-In accordance with the 2026 NASA Space Apps Challenge rules, Super Intelligence (SI) coding and design assistants were used as supportive development tools:
-1. Architecture & Ideation: Assisted in structuring the 5-chapter interactive story flow and designing the HTML5 Canvas 2D physics/telemetry mini-games.
-2. Code Implementation & Accessibility: Assisted in writing TypeScript/React components, responsive Tailwind CSS styling, and the procedural Web Audio API sound synthesizer.
-3. Scientific Verification: All spacecraft parameters, NSSDCA IDs, coordinates, mission durations, and scientific discoveries were cross-verified directly against official NASA NSSDCA (nssdc.gsfc.nasa.gov) and NASA Science Mission Directorate archives.`}
-                </pre>
+                <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed">
+                  In accordance with the 2026 NASA Space Apps Challenge guidelines, Super Intelligence (SI) tools were used to assist with structuring the 5-chapter interactive story flow, scaffolding the React/TypeScript UI and HTML5 2D Canvas instrument simulations, and synthesizing procedural Web Audio API sound effects. All spacecraft IDs, landing coordinates, dates, mass specifications, and scientific discoveries were verified directly against official NASA NSSDCA and NASA Science documentation.
+                </p>
               </div>
             </section>
           </div>
         )}
       </main>
-
-      {/* Footer with Direct NASA References */}
-      <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface)]/60 py-5 px-4 sm:px-6 mt-12">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs text-[var(--color-muted-foreground)] font-mono-tech">
-          <div>
-            <strong>SILENT MONUMENTS</strong> • Built for the 2026 NASA Space Apps Challenge (
-            <em>Abandoned but not Forgotten</em>)
-          </div>
-          <div className="flex flex-wrap items-center gap-4">
-            <a
-              href="https://nssdc.gsfc.nasa.gov/"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-amber-400 underline"
-            >
-              NASA NSSDCA Master Archive
-            </a>
-            <a
-              href="https://www.spaceappschallenge.org/2026/challenges/nasas-discarded-equipment-storytelling/"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-amber-400 underline"
-            >
-              Official 2026 Challenge Page
-            </a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

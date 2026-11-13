@@ -1216,22 +1216,19 @@ export const MiniGameContainer: React.FC<MiniGameProps> = ({
   const [key, setKey] = useState(0);
 
   return (
-    <div className="space-y-3" key={key}>
+    <div className="space-y-4" key={key}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Compass className="w-4 h-4 text-amber-400" />
-          <span className="text-xs font-mono-tech uppercase tracking-wider text-zinc-400">
-            Interactive 2D Telemetry Simulator
-          </span>
-        </div>
+        <span className="text-xs text-[var(--color-muted-foreground)]">
+          Use your keyboard arrow keys or the on-screen controls below.
+        </span>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setKey((k) => k + 1)}
-            className="min-h-[36px] px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-mono-tech text-zinc-300 flex items-center gap-1.5 transition cursor-pointer"
+            className="min-h-[36px] px-3 py-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-xs text-zinc-300 flex items-center gap-1.5 transition cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Reset Sim
+            Reset
           </button>
           {!isCompleted && (
             <button
@@ -1240,11 +1237,11 @@ export const MiniGameContainer: React.FC<MiniGameProps> = ({
                 sound.playSuccessChord();
                 onComplete();
               }}
-              title="Judge Fast-Track: Auto-complete this simulation to test story progression"
-              className="min-h-[36px] px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-xs font-mono-tech text-amber-300 flex items-center gap-1.5 transition cursor-pointer"
+              title="Skip or auto-calibrate this experiment to continue the story"
+              className="min-h-[36px] px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-xs text-amber-300 flex items-center gap-1.5 transition cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              Auto-Calibrate (Judge Fast-Track)
+              Skip / Auto-Calibrate
             </button>
           )}
         </div>
