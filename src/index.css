@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #F59E0B;
+  --color-on-primary: #09090B;
+  --color-secondary: #06B6D4;
+  --color-accent: #EA580C;
+  --color-background: #09090B;
+  --color-surface: #12131A;
+  --color-card: #181822;
+  --color-foreground: #FAFAFA;
+  --color-muted: #272732;
+  --color-muted-foreground: #A1A1AA;
+  --color-border: #2E2E3A;
+  --font-display: 'Orbitron', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+html.light {
+  --color-primary: #D97706;
+  --color-on-primary: #FFFFFF;
+  --color-secondary: #0891B2;
+  --color-accent: #C2410C;
+  --color-background: #FAFAFA;
+  --color-surface: #F1F5F9;
+  --color-card: #FFFFFF;
+  --color-foreground: #09090B;
+  --color-muted: #E2E8F0;
+  --color-muted-foreground: #475569;
+  --color-border: #CBD5E1;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  overflow-x: hidden;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono-tech {
+  font-family: var(--font-mono);
+}
+
+.font-pixel {
+  font-family: var(--font-pixel);
+}
+
+/* Custom Pixel & Telemetry Scanlines */
+.scanlines {
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0),
+    rgba(255,255,255,0) 50%,
+    rgba(0, 0, 0, 0.16) 50%,
+    rgba(0, 0, 0, 0.16)
+  );
+  background-size: 100% 4px;
+}
+
+/* Accessibility: Focus states & Reduced Motion */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
