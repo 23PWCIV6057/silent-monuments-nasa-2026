@@ -295,91 +295,69 @@ const MoonMiniGame: React.FC<{ onWin: () => void }> = ({ onWin }) => {
       </div>
 
       {phase === 'rover' && (
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-zinc-900/60 p-3 rounded-xl border border-zinc-800">
-          <div className="text-xs text-zinc-300 max-w-md">
-            Use <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded border border-zinc-700">WASD</kbd> /{' '}
-            <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded border border-zinc-700">Arrow Keys</kbd> or on-screen controls to drive LRV-1 around craters and touch all 3 blue ALSEP nodes.
-          </div>
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center justify-center gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => moveRover(-22, 0)}
+            aria-label="Drive Rover Left"
+            className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex flex-col gap-1.5">
             <button
               type="button"
-              onClick={() => moveRover(-22, 0)}
-              aria-label="Drive Rover Left"
+              onClick={() => moveRover(0, -22)}
+              aria-label="Drive Rover Up"
               className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowUp className="w-5 h-5" />
             </button>
-            <div className="flex flex-col gap-1.5">
-              <button
-                type="button"
-                onClick={() => moveRover(0, -22)}
-                aria-label="Drive Rover Up"
-                className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
-              >
-                <ArrowUp className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => moveRover(0, 22)}
-                aria-label="Drive Rover Down"
-                className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
-              >
-                <ArrowDown className="w-5 h-5" />
-              </button>
-            </div>
             <button
               type="button"
-              onClick={() => moveRover(22, 0)}
-              aria-label="Drive Rover Right"
+              onClick={() => moveRover(0, 22)}
+              aria-label="Drive Rover Down"
               className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
             >
-              <ArrowRight className="w-5 h-5" />
+              <ArrowDown className="w-5 h-5" />
             </button>
           </div>
+          <button
+            type="button"
+            onClick={() => moveRover(22, 0)}
+            aria-label="Drive Rover Right"
+            className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
+          >
+            <ArrowRight className="w-5 h-5" />
+          </button>
         </div>
       )}
 
       {phase === 'laser' && (
-        <div className="bg-zinc-900/80 p-4 rounded-xl border border-cyan-500/40 space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <label htmlFor="mirror-angle-slider" className="text-xs font-mono-tech text-cyan-300 font-bold">
-              ALSEP CORNER-CUBE ARRAY ORIENTATION: {mirrorAngle}° (Target: 45°)
-            </label>
-            <span className="text-xs text-zinc-400">
-              Align within ±2° of 45° and fire laser pulse
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-4">
-            <input
-              id="mirror-angle-slider"
-              type="range"
-              min={15}
-              max={75}
-              value={mirrorAngle}
-              onChange={(e) => {
-                setMirrorAngle(Number(e.target.value));
-                sound.playBeep(520 + Number(e.target.value) * 5, 0.03, 'sine', 0.04);
-              }}
-              className="flex-1 accent-amber-500 cursor-pointer h-2 bg-zinc-800 rounded-lg"
-            />
-            <button
-              type="button"
-              onClick={handleLockLaser}
-              className="min-h-[44px] px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs font-mono-tech transition cursor-pointer flex items-center gap-2"
-            >
-              <Zap className="w-4 h-4" />
-              FIRE LASER PULSE
-            </button>
-          </div>
-        </div>
-      )}
-
-      {laserLocked && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-mono-tech flex items-center gap-2.5">
-          <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400" />
-          <span>
-            TELEMETRY VERIFIED: All 3 ALSEP stations deployed & Laser Retroreflector locked at 384,400 km! Scroll down for the Science Check.
-          </span>
+        <div className="bg-zinc-900/80 p-4 rounded-xl border border-cyan-500/40 flex flex-wrap items-center gap-4">
+          <label htmlFor="mirror-angle-slider" className="text-xs font-mono-tech text-cyan-300 font-bold shrink-0">
+            Mirror Angle: {mirrorAngle}° (Target: 45°)
+          </label>
+          <input
+            id="mirror-angle-slider"
+            type="range"
+            min={15}
+            max={75}
+            value={mirrorAngle}
+            onChange={(e) => {
+              setMirrorAngle(Number(e.target.value));
+              sound.playBeep(520 + Number(e.target.value) * 5, 0.03, 'sine', 0.04);
+            }}
+            className="flex-1 accent-amber-500 cursor-pointer h-2 bg-zinc-800 rounded-lg"
+          />
+          <button
+            type="button"
+            onClick={handleLockLaser}
+            className="min-h-[44px] px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs font-mono-tech transition cursor-pointer flex items-center gap-2"
+          >
+            <Zap className="w-4 h-4" />
+            Fire Laser
+          </button>
         </div>
       )}
     </div>
@@ -535,15 +513,15 @@ const MarsRoverMiniGame: React.FC<{ onWin: () => void }> = ({ onWin }) => {
 
   return (
     <div className="space-y-4">
-      {/* Zumorroda-X Style Before/After Interactive Science Slider */}
+      {/* Interactive Dust Storm Slider */}
       <div className="bg-zinc-900/90 border border-orange-500/30 rounded-xl p-3.5 space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono-tech">
           <span className="text-orange-400 font-bold flex items-center gap-1.5">
             <Sun className="w-4 h-4" />
-            INTERACTIVE 2018 MARS DUST STORM SIMULATOR (Optical Depth τ = {tauOpacity.toFixed(1)})
+            Dust Opacity (τ = {tauOpacity.toFixed(1)})
           </span>
           <span className={tauOpacity > 6 ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}>
-            SOLAR ARRAY OUTPUT: ~{estimatedWattHours} Wh/sol {tauOpacity > 8 ? '(CRITICAL LOW POWER)' : '(OPERATIONAL)'}
+            Solar Output: ~{estimatedWattHours} Wh/sol
           </span>
         </div>
         <input
@@ -556,19 +534,14 @@ const MarsRoverMiniGame: React.FC<{ onWin: () => void }> = ({ onWin }) => {
           aria-label="Mars Atmospheric Dust Storm Opacity Tau Slider"
           className="w-full accent-orange-500 cursor-pointer h-2 bg-zinc-800 rounded-lg"
         />
-        <div className="flex justify-between text-[11px] text-zinc-400 font-mono-tech">
-          <span>Clear Mars Sky (τ = 0.5 → 600+ Wh/sol)</span>
-          <span>Moderate Dust (τ = 4.0)</span>
-          <span>June 2018 Global Storm (τ = 10.8 → Oppy’s Final Sol 5111)</span>
-        </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 bg-zinc-900/90 border border-zinc-800 px-3.5 py-2.5 rounded-lg text-xs font-mono-tech">
         <span className="text-amber-400 font-bold">
-          HEMATITE "BLUEBERRIES" ANALYZED: {blueberries.filter((b) => b.scanned).length}/5
+          Hematite Scanned: {blueberries.filter((b) => b.scanned).length}/5
         </span>
         <span className="text-cyan-400">
-          SOLAR WING EFFICIENCY: {solarPower}% (Dust Cover: {dustCoat}%)
+          Solar Power: {solarPower}%
         </span>
       </div>
 
@@ -582,46 +555,41 @@ const MarsRoverMiniGame: React.FC<{ onWin: () => void }> = ({ onWin }) => {
         />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-zinc-900/60 p-3 rounded-xl border border-zinc-800">
-        <div className="text-xs text-zinc-300 max-w-md">
-          Drive <strong>Opportunity</strong> to scan all 5 blue Hematite concretions. Drive through cyan <strong>Wind Cleaning Events</strong> to sweep dust off your solar wings!
-        </div>
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-center justify-center gap-2 pt-1">
+        <button
+          type="button"
+          onClick={() => stepRover(-24, 0)}
+          aria-label="Drive Opportunity Left"
+          className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-orange-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div className="flex flex-col gap-1.5">
           <button
             type="button"
-            onClick={() => stepRover(-24, 0)}
-            aria-label="Drive Opportunity Left"
+            onClick={() => stepRover(0, -24)}
+            aria-label="Drive Opportunity Up"
             className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-orange-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowUp className="w-5 h-5" />
           </button>
-          <div className="flex flex-col gap-1.5">
-            <button
-              type="button"
-              onClick={() => stepRover(0, -24)}
-              aria-label="Drive Opportunity Up"
-              className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-orange-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
-            >
-              <ArrowUp className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => stepRover(0, 24)}
-              aria-label="Drive Opportunity Down"
-              className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-orange-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
-            >
-              <ArrowDown className="w-5 h-5" />
-            </button>
-          </div>
           <button
             type="button"
-            onClick={() => stepRover(24, 0)}
-            aria-label="Drive Opportunity Right"
+            onClick={() => stepRover(0, 24)}
+            aria-label="Drive Opportunity Down"
             className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-orange-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
           >
-            <ArrowRight className="w-5 h-5" />
+            <ArrowDown className="w-5 h-5" />
           </button>
         </div>
+        <button
+          type="button"
+          onClick={() => stepRover(24, 0)}
+          aria-label="Drive Opportunity Right"
+          className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-orange-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
+        >
+          <ArrowRight className="w-5 h-5" />
+        </button>
       </div>
     </div>
   );
@@ -826,17 +794,14 @@ const InSightMiniGame: React.FC<{ onWin: () => void }> = ({ onWin }) => {
             />
           </div>
 
-          <div className="md:col-span-2 flex items-center justify-between gap-4 pt-1">
-            <span className="text-xs text-zinc-400 font-mono-tech">
-              {currentQuake.depthNote}
-            </span>
+          <div className="md:col-span-2 flex justify-end pt-1">
             <button
               type="button"
               onClick={handleLockQuake}
               className="min-h-[44px] px-5 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-bold text-xs font-mono-tech transition cursor-pointer flex items-center gap-2 shrink-0"
             >
               <Activity className="w-4 h-4" />
-              LOCK SEISMIC PACKET ({quakeIndex + 1}/3)
+              Lock Seismic Packet ({quakeIndex + 1}/3)
             </button>
           </div>
         </div>
@@ -1016,46 +981,41 @@ const IngenuityMiniGame: React.FC<{ onWin: () => void }> = ({ onWin }) => {
         />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-zinc-900/60 p-3 rounded-xl border border-zinc-800">
-        <div className="text-xs text-zinc-300 max-w-md">
-          Fly <strong>Ingenuity</strong> through all 3 orange reconnaissance targets to scout safe rover paths for Perseverance, then touch down on <strong>Airfield Chi</strong> on the bottom right!
-        </div>
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-center justify-center gap-2 pt-1">
+        <button
+          type="button"
+          onClick={() => flyStep(-25, 0)}
+          aria-label="Fly Ingenuity Left"
+          className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-emerald-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div className="flex flex-col gap-1.5">
           <button
             type="button"
-            onClick={() => flyStep(-25, 0)}
-            aria-label="Fly Ingenuity Left"
+            onClick={() => flyStep(0, -22)}
+            aria-label="Spin Rotors Up"
             className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-emerald-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowUp className="w-5 h-5" />
           </button>
-          <div className="flex flex-col gap-1.5">
-            <button
-              type="button"
-              onClick={() => flyStep(0, -22)}
-              aria-label="Spin Rotors Up"
-              className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-emerald-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
-            >
-              <ArrowUp className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => flyStep(0, 22)}
-              aria-label="Descend Ingenuity"
-              className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-emerald-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
-            >
-              <ArrowDown className="w-5 h-5" />
-            </button>
-          </div>
           <button
             type="button"
-            onClick={() => flyStep(25, 0)}
-            aria-label="Fly Ingenuity Right"
+            onClick={() => flyStep(0, 22)}
+            aria-label="Descend Ingenuity"
             className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-emerald-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
           >
-            <ArrowRight className="w-5 h-5" />
+            <ArrowDown className="w-5 h-5" />
           </button>
         </div>
+        <button
+          type="button"
+          onClick={() => flyStep(25, 0)}
+          aria-label="Fly Ingenuity Right"
+          className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg bg-zinc-800 hover:bg-emerald-500 hover:text-zinc-950 transition cursor-pointer flex items-center justify-center"
+        >
+          <ArrowRight className="w-5 h-5" />
+        </button>
       </div>
     </div>
   );
@@ -1169,37 +1129,30 @@ const DeepSpaceMiniGame: React.FC<{ onWin: () => void }> = ({ onWin }) => {
         />
       </div>
 
-      <div className="bg-zinc-900/80 p-4 rounded-xl border border-purple-500/30 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono-tech">
-          <label htmlFor="dsn-azimuth-slider" className="text-purple-300 font-bold">
-            ROTATE 70m GOLDSTONE/CANBERRA/MADRID DISH (Targets: 55°, 135°, 225°, 315°)
-          </label>
-          <span className={activeTarget ? 'text-emerald-400 font-bold' : 'text-zinc-400'}>
-            {activeTarget ? `CARRIER DETECTED: ${activeTarget.name}` : 'SWEEP AZIMUTH FOR CARRIER'}
-          </span>
-        </div>
-        <div className="flex flex-wrap items-center gap-4">
-          <input
-            id="dsn-azimuth-slider"
-            type="range"
-            min={0}
-            max={359}
-            value={dishAngle}
-            onChange={(e) => {
-              setDishAngle(Number(e.target.value));
-              sound.playBeep(300 + Number(e.target.value), 0.02, 'sine', 0.03);
-            }}
-            className="flex-1 accent-purple-500 cursor-pointer h-2 bg-zinc-800 rounded-lg"
-          />
-          <button
-            type="button"
-            onClick={handleLockSignal}
-            className="min-h-[44px] px-5 py-2.5 rounded-lg bg-purple-500 hover:bg-purple-400 text-zinc-950 font-bold text-xs font-mono-tech transition cursor-pointer flex items-center gap-2"
-          >
-            <Radio className="w-4 h-4" />
-            DECODE TELEMETRY
-          </button>
-        </div>
+      <div className="bg-zinc-900/80 p-4 rounded-xl border border-purple-500/30 flex flex-wrap items-center gap-4">
+        <label htmlFor="dsn-azimuth-slider" className="text-xs font-mono-tech text-purple-300 font-bold shrink-0">
+          Dish Angle: {dishAngle}°
+        </label>
+        <input
+          id="dsn-azimuth-slider"
+          type="range"
+          min={0}
+          max={359}
+          value={dishAngle}
+          onChange={(e) => {
+            setDishAngle(Number(e.target.value));
+            sound.playBeep(300 + Number(e.target.value), 0.02, 'sine', 0.03);
+          }}
+          className="flex-1 accent-purple-500 cursor-pointer h-2 bg-zinc-800 rounded-lg"
+        />
+        <button
+          type="button"
+          onClick={handleLockSignal}
+          className="min-h-[44px] px-5 py-2.5 rounded-lg bg-purple-500 hover:bg-purple-400 text-zinc-950 font-bold text-xs font-mono-tech transition cursor-pointer flex items-center gap-2"
+        >
+          <Radio className="w-4 h-4" />
+          Lock Signal
+        </button>
       </div>
     </div>
   );
@@ -1217,34 +1170,28 @@ export const MiniGameContainer: React.FC<MiniGameProps> = ({
 
   return (
     <div className="space-y-4" key={key}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs text-[var(--color-muted-foreground)]">
-          Use your keyboard arrow keys or the on-screen controls below.
-        </span>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setKey((k) => k + 1)}
+          className="min-h-[34px] px-3 py-1 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-xs text-zinc-300 flex items-center gap-1.5 transition cursor-pointer"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          Reset
+        </button>
+        {!isCompleted && (
           <button
             type="button"
-            onClick={() => setKey((k) => k + 1)}
-            className="min-h-[36px] px-3 py-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-xs text-zinc-300 flex items-center gap-1.5 transition cursor-pointer"
+            onClick={() => {
+              sound.playSuccessChord();
+              onComplete();
+            }}
+            className="min-h-[34px] px-3 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-xs text-amber-300 flex items-center gap-1.5 transition cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            Reset
+            <Sparkles className="w-3.5 h-3.5" />
+            Skip
           </button>
-          {!isCompleted && (
-            <button
-              type="button"
-              onClick={() => {
-                sound.playSuccessChord();
-                onComplete();
-              }}
-              title="Skip or auto-calibrate this experiment to continue the story"
-              className="min-h-[36px] px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-xs text-amber-300 flex items-center gap-1.5 transition cursor-pointer"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Skip / Auto-Calibrate
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
       {chapterId === 1 && <MoonMiniGame onWin={onComplete} />}

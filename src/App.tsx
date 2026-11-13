@@ -11,13 +11,8 @@ import {
   CheckCircle2,
   Unlock,
   Sparkles,
-  BookOpen,
-  Radio,
   ChevronRight,
   ChevronLeft,
-  ChevronDown,
-  MapPin,
-  FileText,
   Play,
   Copy,
   Check,
@@ -35,7 +30,6 @@ export function App() {
   const [activeChapterId, setActiveChapterId] = useState<number>(1);
   const [storyBeat, setStoryBeat] = useState<StoryBeat>('story');
   const [dialogueStep, setDialogueStep] = useState<number>(0);
-  const [showFieldNotes, setShowFieldNotes] = useState<boolean>(false);
   const [showCertificateModal, setShowCertificateModal] = useState<boolean>(false);
 
   const [completedGames, setCompletedGames] = useState<number[]>([]);
@@ -50,7 +44,6 @@ export function App() {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
 
   const currentChapter = CHAPTERS.find((c) => c.id === activeChapterId) || CHAPTERS[0];
-  const chapterArtifacts = NSSDCA_ARTIFACTS.filter((a) => a.chapterId === activeChapterId);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -70,7 +63,6 @@ export function App() {
     setActiveChapterId(chapterId);
     setStoryBeat('story');
     setDialogueStep(0);
-    setShowFieldNotes(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -109,10 +101,6 @@ export function App() {
     setShowPrologue(false);
   };
 
-  const totalProgress = Math.round(
-    ((completedGames.length + completedQuizzes.length) / (CHAPTERS.length * 2)) * 100
-  );
-
   const filteredArtifacts =
     bodyFilter === 'All'
       ? NSSDCA_ARTIFACTS
@@ -139,10 +127,9 @@ export function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--color-background)] text-[var(--color-foreground)] story-backdrop transition-colors duration-200">
-      {/* Minimal, Calm Top Bar */}
+      {/* Minimal Header */}
       <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-background)]/85 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
-          {/* Brand Title */}
           <button
             type="button"
             onClick={() => {
@@ -155,17 +142,11 @@ export function App() {
             <div className="w-9 h-9 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:bg-amber-500/25 transition">
               <Rocket className="w-4 h-4" />
             </div>
-            <div>
-              <span className="font-display font-bold tracking-wide text-sm text-[var(--color-foreground)] block leading-none">
-                Silent Monuments
-              </span>
-              <span className="text-[11px] text-[var(--color-muted-foreground)] block mt-1">
-                NASA Space Apps 2026
-              </span>
-            </div>
+            <span className="font-display font-bold tracking-wide text-sm text-[var(--color-foreground)]">
+              Silent Monuments
+            </span>
           </button>
 
-          {/* Center Chapter Timeline Pill (only visible in Story mode after Prologue) */}
           {activeTab === 'quest' && !showPrologue && !showCertificateModal && (
             <nav
               aria-label="Story Chapters"
@@ -188,7 +169,9 @@ export function App() {
                         : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-muted)]'
                     }`}
                   >
-                    <span>{chap.id}. {chapterShortNames[chap.id]}</span>
+                    <span>
+                      {chap.id}. {chapterShortNames[chap.id]}
+                    </span>
                     {isDone && (
                       <CheckCircle2
                         className={`w-3.5 h-3.5 ${
@@ -202,7 +185,6 @@ export function App() {
             </nav>
           )}
 
-          {/* Right Quiet Controls */}
           <div className="flex items-center gap-1.5">
             <button
               type="button"
@@ -233,7 +215,7 @@ export function App() {
               }`}
             >
               <Database className="w-3.5 h-3.5" />
-              <span>Archive (13)</span>
+              <span>Archive</span>
             </button>
 
             <button
@@ -249,7 +231,7 @@ export function App() {
               }`}
             >
               <Award className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">7-Slide Deck</span>
+              <span className="hidden sm:inline">Deck</span>
             </button>
 
             <button
@@ -273,41 +255,30 @@ export function App() {
         </div>
       </header>
 
-      {/* Main Content Container */}
-      <main className="flex-1 w-full mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        {/* ===================================================================
-            VIEW 1: CALM, FOCUSED STORYTELLING FLOW (ONE SCENE AT A TIME)
-        =================================================================== */}
+      {/* Main Content */}
+      <main className="flex-1 w-full mx-auto px-4 sm:px-6 py-10 sm:py-14">
         {activeTab === 'quest' && (
           <div className="max-w-3xl mx-auto">
-            {/* SCENE A: PROLOGUE / OPENING COVER */}
+            {/* PROLOGUE */}
             {showPrologue && !showCertificateModal && (
-              <section className="story-beat-enter py-6 sm:py-10 text-center space-y-8">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono-tech">
-                  <Radio className="w-3.5 h-3.5 animate-pulse" />
-                  <span>An Interactive Story of NASA’s Left-Behind Pioneers</span>
-                </div>
-
+              <section className="story-beat-enter py-12 sm:py-16 text-center space-y-8">
                 <div className="space-y-4 max-w-2xl mx-auto">
                   <h1 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
                     They Are Not Space Junk.{' '}
                     <span className="text-amber-400 block sm:inline">They Are Monuments.</span>
                   </h1>
-                  <p className="text-base sm:text-lg text-[var(--color-muted-foreground)] leading-relaxed">
-                    Across the dusty plains of the Moon, the rust-red valleys of Mars, and the dark void between worlds, thirteen NASA spacecraft rest where their fuel or sunlight finally ran out.
-                  </p>
-                  <p className="text-base sm:text-lg text-[var(--color-foreground)]/90 leading-relaxed">
-                    Step into the boots of <strong>Junior Archivist Maya</strong>. Tune into five quiet worlds, listen to each machine tell its story in its own words, and wake its scientific instruments one last time.
+                  <p className="text-base sm:text-lg text-[var(--color-muted-foreground)] leading-relaxed max-w-xl mx-auto">
+                    Five worlds. Thirteen silent NASA pioneers. Hear their voices and wake their instruments one last time.
                   </p>
                 </div>
 
-                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <button
                     type="button"
                     onClick={() => selectChapter(1)}
                     className="min-h-[52px] px-8 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-base flex items-center gap-2.5 shadow-lg shadow-amber-500/20 transition cursor-pointer"
                   >
-                    <span>Begin Chapter 1: The Moon</span>
+                    <span>Begin Story</span>
                     <ChevronRight className="w-5 h-5" />
                   </button>
 
@@ -317,76 +288,39 @@ export function App() {
                     className="min-h-[52px] px-5 py-3.5 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-muted)] border border-[var(--color-border)] text-xs font-mono-tech text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] flex items-center gap-2 transition cursor-pointer"
                   >
                     <Unlock className="w-4 h-4 text-emerald-400" />
-                    <span>Judge Fast-Track (Unlock All 5 Chapters)</span>
+                    <span>Unlock All</span>
                   </button>
-                </div>
-
-                {/* Subtle 5-Chapter Preview Strip */}
-                <div className="pt-8 border-t border-[var(--color-border)]">
-                  <p className="text-xs text-[var(--color-muted-foreground)] mb-4">
-                    Or jump directly to any of the 5 chapters in the journey:
-                  </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-left">
-                    {CHAPTERS.map((chap) => (
-                      <button
-                        key={chap.id}
-                        type="button"
-                        onClick={() => selectChapter(chap.id)}
-                        className="p-3 rounded-xl bg-[var(--color-surface)]/70 hover:bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-amber-500/40 transition cursor-pointer"
-                      >
-                        <span className="text-[11px] font-mono-tech text-amber-400 block">
-                          Chapter {chap.id}
-                        </span>
-                        <span className="text-xs font-semibold text-[var(--color-foreground)] mt-0.5 block">
-                          {chapterShortNames[chap.id]}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </section>
             )}
 
-            {/* SCENE B: ACTIVE CHAPTER — GUIDED 3-BEAT FLOW */}
+            {/* ACTIVE CHAPTER */}
             {!showPrologue && !showCertificateModal && (
-              <div className="space-y-8 story-beat-enter" key={`${activeChapterId}-${storyBeat}`}>
+              <div className="space-y-6 story-beat-enter" key={`${activeChapterId}-${storyBeat}`}>
                 {/* Mobile Chapter Switcher */}
-                <div className="flex md:hidden items-center justify-between gap-2 pb-2 border-b border-[var(--color-border)]">
-                  <span className="text-xs font-mono-tech text-amber-400">
-                    Chapter {currentChapter.id} of 5
-                  </span>
-                  <div className="flex gap-1">
-                    {CHAPTERS.map((c) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => selectChapter(c.id)}
-                        className={`w-8 h-8 rounded-lg text-xs font-bold cursor-pointer ${
-                          activeChapterId === c.id
-                            ? 'bg-amber-500 text-zinc-950'
-                            : 'bg-[var(--color-surface)] text-[var(--color-muted-foreground)]'
-                        }`}
-                      >
-                        {c.id}
-                      </button>
-                    ))}
-                  </div>
+                <div className="flex md:hidden items-center justify-center gap-1.5">
+                  {CHAPTERS.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => selectChapter(c.id)}
+                      className={`w-9 h-9 rounded-lg text-xs font-bold cursor-pointer ${
+                        activeChapterId === c.id
+                          ? 'bg-amber-500 text-zinc-950'
+                          : 'bg-[var(--color-surface)] text-[var(--color-muted-foreground)]'
+                      }`}
+                    >
+                      {c.id}
+                    </button>
+                  ))}
                 </div>
 
-                {/* Chapter Header */}
-                <div className="text-center space-y-2">
-                  <div className="text-xs font-mono-tech text-amber-400">
-                    Chapter {currentChapter.id} of 5 • {currentChapter.celestialBody} ({currentChapter.yearRange})
-                  </div>
-                  <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">
-                    {currentChapter.title.replace(/^Chapter \d+:\s*/, '')}
-                  </h1>
-                  <p className="text-sm text-[var(--color-muted-foreground)]">
-                    {currentChapter.subtitle}
-                  </p>
-                </div>
+                {/* Clean Chapter Heading (Zero Subtext) */}
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-center">
+                  {currentChapter.title}
+                </h1>
 
-                {/* 3-Beat Story Flow Stepper */}
+                {/* 3-Beat Stepper */}
                 <div
                   role="tablist"
                   aria-label="Chapter story steps"
@@ -403,7 +337,7 @@ export function App() {
                         : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'
                     }`}
                   >
-                    <span>1. The Story</span>
+                    <span>1. Story</span>
                   </button>
 
                   <button
@@ -417,7 +351,7 @@ export function App() {
                         : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'
                     }`}
                   >
-                    <span>2. The Instrument</span>
+                    <span>2. Instrument</span>
                     {isCurrentGameDone && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
                   </button>
 
@@ -432,358 +366,235 @@ export function App() {
                         : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'
                     }`}
                   >
-                    <span>3. Reflection</span>
+                    <span>3. Quiz</span>
                     {isCurrentQuizDone && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
                   </button>
                 </div>
 
-                {/* =========================================================
-                    BEAT 1: THE STORY (FIRST-PERSON VOICE + OPTIONAL NOTES)
-                ========================================================= */}
+                {/* BEAT 1: STORY */}
                 {storyBeat === 'story' && (
-                  <div className="space-y-6 story-beat-enter">
-                    <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 sm:p-10 shadow-xl space-y-6">
-                      {/* Speaker Badge */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-[var(--color-border)]">
-                        <div className="flex items-center gap-2.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
-                          <span className="text-xs sm:text-sm font-mono-tech text-amber-400 font-semibold">
-                            {currentChapter.characterName}
-                          </span>
-                        </div>
-                        <span className="text-xs font-mono-tech text-[var(--color-muted-foreground)]">
-                          Part {dialogueStep + 1} of {currentChapter.dialogueIntro.length}
-                        </span>
-                      </div>
-
-                      {/* Main Story Text — Spacious, Easy to Read */}
-                      <blockquote
-                        key={dialogueStep}
-                        className="story-beat-enter text-lg sm:text-xl leading-relaxed text-[var(--color-foreground)] font-normal min-h-[120px] flex items-center"
-                      >
-                        “{currentChapter.dialogueIntro[dialogueStep]}”
-                      </blockquote>
-
-                      {/* Story Pacing Controls */}
-                      <div className="flex items-center justify-between gap-4 pt-4 border-t border-[var(--color-border)]">
-                        <button
-                          type="button"
-                          disabled={dialogueStep === 0}
-                          onClick={() => {
-                            sound.playBeep(420, 0.04);
-                            setDialogueStep((s) => Math.max(0, s - 1));
-                          }}
-                          className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-muted)] disabled:opacity-30 text-xs sm:text-sm font-medium flex items-center gap-1.5 cursor-pointer transition"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                          <span>Previous</span>
-                        </button>
-
-                        {/* Page Dots */}
-                        <div className="flex gap-2">
-                          {currentChapter.dialogueIntro.map((_, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              aria-label={`Go to story part ${idx + 1}`}
-                              onClick={() => setDialogueStep(idx)}
-                              className={`h-2 rounded-full transition-all cursor-pointer ${
-                                idx === dialogueStep
-                                  ? 'w-6 bg-amber-400'
-                                  : 'w-2 bg-[var(--color-muted-foreground)]/40'
-                              }`}
-                            />
-                          ))}
-                        </div>
-
-                        {!isLastDialogueLine ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              sound.playBeep(560, 0.04);
-                              setDialogueStep((s) => s + 1);
-                            }}
-                            className="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer transition"
-                          >
-                            <span>Continue Story</span>
-                            <ChevronRight className="w-4 h-4" />
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              sound.playBeep(640, 0.06);
-                              setStoryBeat('experiment');
-                            }}
-                            className="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-amber-500/20 cursor-pointer transition"
-                          >
-                            <span>Wake Up the Instrument</span>
-                            <ChevronRight className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
+                  <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 sm:p-10 shadow-xl space-y-6 story-beat-enter">
+                    <div className="flex items-center justify-between gap-2 pb-3 border-b border-[var(--color-border)]">
+                      <span className="text-xs sm:text-sm font-mono-tech text-amber-400 font-semibold">
+                        {currentChapter.characterName}
+                      </span>
+                      <span className="text-xs font-mono-tech text-[var(--color-muted-foreground)]">
+                        {dialogueStep + 1} / {currentChapter.dialogueIntro.length}
+                      </span>
                     </div>
 
-                    {/* Optional Collapsible Historical Field Notes (Closed by default to prevent visual clutter) */}
-                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/60 overflow-hidden">
+                    <blockquote
+                      key={dialogueStep}
+                      className="story-beat-enter text-lg sm:text-xl leading-relaxed text-[var(--color-foreground)] font-normal min-h-[120px] flex items-center"
+                    >
+                      “{currentChapter.dialogueIntro[dialogueStep]}”
+                    </blockquote>
+
+                    <div className="flex items-center justify-between gap-4 pt-4 border-t border-[var(--color-border)]">
                       <button
                         type="button"
-                        onClick={() => setShowFieldNotes((v) => !v)}
-                        aria-expanded={showFieldNotes}
-                        className="w-full min-h-[48px] px-5 py-3.5 flex items-center justify-between text-left text-xs sm:text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition cursor-pointer"
+                        disabled={dialogueStep === 0}
+                        onClick={() => {
+                          sound.playBeep(420, 0.04);
+                          setDialogueStep((s) => Math.max(0, s - 1));
+                        }}
+                        className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-muted)] disabled:opacity-30 text-xs sm:text-sm font-medium flex items-center gap-1.5 cursor-pointer transition"
                       >
-                        <span className="flex items-center gap-2 font-medium">
-                          <BookOpen className="w-4 h-4 text-amber-400" />
-                          <span>
-                            Want the deeper history? Read NASA Field Notes & {chapterArtifacts.length} NSSDCA Records
-                          </span>
-                        </span>
-                        <ChevronDown
-                          className={`w-4 h-4 transition-transform ${
-                            showFieldNotes ? 'rotate-180' : ''
-                          }`}
-                        />
+                        <ChevronLeft className="w-4 h-4" />
+                        <span>Back</span>
                       </button>
 
-                      {showFieldNotes && (
-                        <div className="px-5 pb-5 pt-2 border-t border-[var(--color-border)] space-y-4 text-sm leading-relaxed story-beat-enter">
-                          <p className="text-[var(--color-foreground)]/90">
-                            {currentChapter.scientificContext}
-                          </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                            {chapterArtifacts.map((art) => (
-                              <div
-                                key={art.id}
-                                className="p-3.5 rounded-xl bg-[var(--color-card)] border border-[var(--color-border)] space-y-1.5"
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="font-semibold text-xs text-amber-400">
-                                    {art.name}
-                                  </span>
-                                  <span className="text-[11px] font-mono-tech text-[var(--color-muted-foreground)]">
-                                    {art.nssdcaId}
-                                  </span>
-                                </div>
-                                <p className="text-xs text-[var(--color-muted-foreground)]">
-                                  {art.whyLeftBehind}
-                                </p>
-                                <div className="flex items-center justify-between pt-1 text-[11px]">
-                                  <span className="text-cyan-400 flex items-center gap-1">
-                                    <MapPin className="w-3 h-3" />
-                                    {art.locationName}
-                                  </span>
-                                  <a
-                                    href={art.officialUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-amber-400 hover:underline flex items-center gap-1"
-                                  >
-                                    NASA Page <ExternalLink className="w-3 h-3" />
-                                  </a>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
+                      <div className="flex gap-2">
+                        {currentChapter.dialogueIntro.map((_, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            aria-label={`Story part ${idx + 1}`}
+                            onClick={() => setDialogueStep(idx)}
+                            className={`h-2 rounded-full transition-all cursor-pointer ${
+                              idx === dialogueStep
+                                ? 'w-6 bg-amber-400'
+                                : 'w-2 bg-[var(--color-muted-foreground)]/40'
+                            }`}
+                          />
+                        ))}
+                      </div>
+
+                      {!isLastDialogueLine ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sound.playBeep(560, 0.04);
+                            setDialogueStep((s) => s + 1);
+                          }}
+                          className="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer transition"
+                        >
+                          <span>Next</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sound.playBeep(640, 0.06);
+                            setStoryBeat('experiment');
+                          }}
+                          className="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-amber-500/20 cursor-pointer transition"
+                        >
+                          <span>Launch Instrument</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
                       )}
                     </div>
                   </div>
                 )}
 
-                {/* =========================================================
-                    BEAT 2: THE INSTRUMENT (FOCUSED INTERACTIVE SIMULATION)
-                ========================================================= */}
+                {/* BEAT 2: INSTRUMENT (CLEAN CANVAS, ZERO EXPLANATION CLUTTER) */}
                 {storyBeat === 'experiment' && (
-                  <div className="space-y-6 story-beat-enter">
-                    <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 sm:p-8 shadow-xl space-y-5">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <span className="text-xs font-mono-tech text-amber-400">
-                            Hands-On Telemetry Reconstruction
-                          </span>
-                          <h2 className="font-display text-lg sm:text-xl font-bold mt-0.5">
-                            {currentChapter.miniGameTitle}
-                          </h2>
-                        </div>
-                        {isCurrentGameDone && (
-                          <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-medium flex items-center gap-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Telemetry Restored
-                          </span>
-                        )}
-                      </div>
+                  <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 sm:p-8 shadow-xl space-y-5 story-beat-enter">
+                    <div className="flex items-center justify-between gap-2">
+                      <h2 className="font-display text-lg sm:text-xl font-bold">
+                        {currentChapter.miniGameTitle}
+                      </h2>
+                      {isCurrentGameDone && (
+                        <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-medium flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Complete
+                        </span>
+                      )}
+                    </div>
 
-                      <p className="text-sm text-[var(--color-muted-foreground)] leading-relaxed">
-                        {currentChapter.miniGameInstruction}
-                      </p>
+                    <MiniGameContainer
+                      chapterId={currentChapter.id}
+                      isCompleted={isCurrentGameDone}
+                      onComplete={() => handleCompleteMiniGame(currentChapter.id)}
+                    />
 
-                      <MiniGameContainer
-                        chapterId={currentChapter.id}
-                        isCompleted={isCurrentGameDone}
-                        onComplete={() => handleCompleteMiniGame(currentChapter.id)}
-                      />
+                    <div className="flex items-center justify-between gap-4 pt-3 border-t border-[var(--color-border)]">
+                      <button
+                        type="button"
+                        onClick={() => setStoryBeat('story')}
+                        className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-xs sm:text-sm font-medium flex items-center gap-1.5 cursor-pointer transition"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        <span>Story</span>
+                      </button>
 
-                      <div className="p-3.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] text-xs text-[var(--color-muted-foreground)] leading-relaxed">
-                        <strong className="text-[var(--color-foreground)]">Real NASA Science: </strong>
-                        {currentChapter.miniGameScienceNote}
-                      </div>
-
-                      {/* Navigation Footer */}
-                      <div className="flex items-center justify-between gap-4 pt-3 border-t border-[var(--color-border)]">
-                        <button
-                          type="button"
-                          onClick={() => setStoryBeat('story')}
-                          className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-xs sm:text-sm font-medium flex items-center gap-1.5 cursor-pointer transition"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                          <span>Back to Story</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            sound.playBeep(660, 0.05);
-                            setStoryBeat('reflection');
-                          }}
-                          className={`min-h-[44px] px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition ${
-                            isCurrentGameDone
-                              ? 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-md shadow-emerald-500/20'
-                              : 'bg-amber-500 hover:bg-amber-400 text-zinc-950'
-                          }`}
-                        >
-                          <span>Continue to Reflection</span>
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sound.playBeep(660, 0.05);
+                          setStoryBeat('reflection');
+                        }}
+                        className={`min-h-[44px] px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition ${
+                          isCurrentGameDone
+                            ? 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-md shadow-emerald-500/20'
+                            : 'bg-amber-500 hover:bg-amber-400 text-zinc-950'
+                        }`}
+                      >
+                        <span>Next: Quick Quiz</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 )}
 
-                {/* =========================================================
-                    BEAT 3: REFLECTION & NEXT DESTINATION
-                ========================================================= */}
+                {/* BEAT 3: QUICK QUIZ & NEXT CHAPTER */}
                 {storyBeat === 'reflection' && (
-                  <div className="space-y-6 story-beat-enter">
-                    <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 sm:p-10 shadow-xl space-y-6">
-                      <div className="space-y-1">
-                        <span className="text-xs font-mono-tech text-amber-400">
-                          Archivist Memory Log • Chapter {currentChapter.id}
-                        </span>
-                        <h2 className="text-lg sm:text-xl font-semibold leading-snug">
-                          {currentChapter.quiz.question}
-                        </h2>
-                      </div>
+                  <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 sm:p-10 shadow-xl space-y-6 story-beat-enter">
+                    <h2 className="text-lg sm:text-xl font-semibold leading-snug">
+                      {currentChapter.quiz.question}
+                    </h2>
 
-                      <div className="space-y-3">
-                        {currentChapter.quiz.options.map((opt, idx) => {
-                          const chosen = selectedQuizOption[currentChapter.id] === idx;
-                          const isCorrect = idx === currentChapter.quiz.correctIndex;
-                          let btnStyle =
-                            'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-muted)]';
-                          if (chosen && isCorrect) {
-                            btnStyle = 'border-emerald-500 bg-emerald-500/15 text-emerald-200';
-                          } else if (chosen && !isCorrect) {
-                            btnStyle = 'border-rose-500 bg-rose-500/15 text-rose-200';
-                          }
+                    <div className="space-y-3">
+                      {currentChapter.quiz.options.map((opt, idx) => {
+                        const chosen = selectedQuizOption[currentChapter.id] === idx;
+                        const isCorrect = idx === currentChapter.quiz.correctIndex;
+                        let btnStyle =
+                          'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-muted)]';
+                        if (chosen && isCorrect) {
+                          btnStyle = 'border-emerald-500 bg-emerald-500/15 text-emerald-200';
+                        } else if (chosen && !isCorrect) {
+                          btnStyle = 'border-rose-500 bg-rose-500/15 text-rose-200';
+                        }
 
-                          return (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() =>
-                                handleSelectQuiz(
-                                  currentChapter.id,
-                                  idx,
-                                  currentChapter.quiz.correctIndex
-                                )
-                              }
-                              className={`w-full min-h-[52px] p-4 rounded-2xl border text-left text-sm sm:text-base transition cursor-pointer flex items-start gap-3 ${btnStyle}`}
-                            >
-                              <span className="font-mono-tech font-bold text-amber-400 shrink-0 mt-0.5">
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() =>
+                              handleSelectQuiz(
+                                currentChapter.id,
+                                idx,
+                                currentChapter.quiz.correctIndex
+                              )
+                            }
+                            className={`w-full min-h-[52px] p-4 rounded-2xl border text-left text-sm sm:text-base transition cursor-pointer flex items-center justify-between gap-3 ${btnStyle}`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <span className="font-mono-tech font-bold text-amber-400 shrink-0">
                                 {String.fromCharCode(65 + idx)}.
                               </span>
                               <span>{opt}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                            </div>
+                            {chosen && (
+                              <span className="text-xs font-mono-tech font-bold shrink-0">
+                                {isCorrect ? '✓ Correct' : '✕ Try again'}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
 
-                      {selectedQuizOption[currentChapter.id] !== undefined && (
-                        <div
-                          className={`p-4 rounded-2xl text-sm leading-relaxed border story-beat-enter ${
-                            selectedQuizOption[currentChapter.id] === currentChapter.quiz.correctIndex
-                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
-                              : 'bg-rose-500/10 border-rose-500/30 text-rose-200'
-                          }`}
-                        >
-                          <strong>
-                            {selectedQuizOption[currentChapter.id] === currentChapter.quiz.correctIndex
-                              ? 'Memory Verified — '
-                              : 'Not quite — '}
-                          </strong>
-                          {currentChapter.quiz.explanation}
-                        </div>
-                      )}
+                    <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[var(--color-border)]">
+                      <button
+                        type="button"
+                        onClick={() => setStoryBeat('experiment')}
+                        className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-xs sm:text-sm font-medium flex items-center gap-1.5 cursor-pointer transition"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        <span>Instrument</span>
+                      </button>
 
-                      {/* Footer Navigation to Next Chapter */}
-                      <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[var(--color-border)]">
+                      {activeChapterId < 5 ? (
                         <button
                           type="button"
-                          onClick={() => setStoryBeat('experiment')}
-                          className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-xs sm:text-sm font-medium flex items-center gap-1.5 cursor-pointer transition"
+                          onClick={() => selectChapter(activeChapterId + 1)}
+                          className="min-h-[48px] px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer transition"
                         >
-                          <ChevronLeft className="w-4 h-4" />
-                          <span>Back to Instrument</span>
+                          <span>
+                            Chapter {activeChapterId + 1}: {chapterShortNames[activeChapterId + 1]}
+                          </span>
+                          <ChevronRight className="w-4 h-4" />
                         </button>
-
-                        {activeChapterId < 5 ? (
-                          <button
-                            type="button"
-                            onClick={() => selectChapter(activeChapterId + 1)}
-                            className="min-h-[48px] px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer transition"
-                          >
-                            <span>
-                              Travel to Chapter {activeChapterId + 1}: {chapterShortNames[activeChapterId + 1]}
-                            </span>
-                            <ChevronRight className="w-4 h-4" />
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              sound.playSuccessChord();
-                              setShowCertificateModal(true);
-                            }}
-                            className="min-h-[48px] px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer transition"
-                          >
-                            <Sparkles className="w-4 h-4" />
-                            <span>Complete Journey & View Certificate</span>
-                          </button>
-                        )}
-                      </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sound.playSuccessChord();
+                            setShowCertificateModal(true);
+                          }}
+                          className="min-h-[48px] px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer transition"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          <span>Claim Certificate</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* SCENE C: EPILOGUE & ARCHIVIST CERTIFICATE */}
+            {/* EPILOGUE CERTIFICATE */}
             {showCertificateModal && (
               <section className="story-beat-enter rounded-3xl border border-amber-400/50 bg-[var(--color-card)] p-6 sm:p-10 text-center space-y-6 shadow-2xl">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-mono-tech">
-                  <Sparkles className="w-4 h-4" />
-                  <span>Epilogue • All 5 Frontiers Remembered ({totalProgress}% Verified)</span>
-                </div>
-
                 <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-amber-400">
                   Deep Space Heritage Archivist Certificate
                 </h2>
 
-                <p className="text-sm sm:text-base text-[var(--color-muted-foreground)] max-w-xl mx-auto leading-relaxed">
-                  From Eagle’s Descent Stage on the Moon to Opportunity, InSight, Ingenuity on Mars, and Pioneer 10 drifting toward the stars, their voices and scientific legacy now live on through you.
-                </p>
-
-                <div className="max-w-md mx-auto flex flex-col sm:flex-row items-center gap-2 pt-2">
+                <div className="max-w-md mx-auto flex flex-col sm:flex-row items-center gap-2">
                   <label htmlFor="archivist-name-input" className="sr-only">
                     Your Archivist Name
                   </label>
@@ -800,50 +611,38 @@ export function App() {
                     onClick={() => window.print()}
                     className="min-h-[44px] px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs font-mono-tech shrink-0 cursor-pointer transition"
                   >
-                    Print Certificate
+                    Print
                   </button>
                 </div>
 
                 <div className="max-w-xl mx-auto p-6 rounded-2xl bg-zinc-950/90 border border-amber-500/30 font-mono-tech text-xs space-y-2 text-zinc-300">
                   <div className="text-amber-400 font-bold text-sm">
-                    JUNIOR DEEP SPACE ARCHIVIST: {explorerName.toUpperCase()}
-                  </div>
-                  <div>
-                    MISSIONS RESTORED: Apollo 11/15 • Surveyor 3 • Viking 1/2 • Sojourner • Spirit & Opportunity • Phoenix & InSight • Ingenuity • NEAR Shoemaker • Dawn • Kepler • Pioneer 10/11
+                    ARCHIVIST: {explorerName.toUpperCase()}
                   </div>
                   <div className="text-emerald-400">
-                    2026 NASA INTERNATIONAL SPACE APPS CHALLENGE • ABANDONED BUT NOT FORGOTTEN
+                    ALL 5 SOLAR SYSTEM CHAPTERS COMPLETED • NASA SPACE APPS 2026
                   </div>
                 </div>
 
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={() => selectChapter(1)}
-                    className="text-xs font-mono-tech text-[var(--color-muted-foreground)] hover:text-amber-400 underline cursor-pointer"
-                  >
-                    Return to Chapter 1
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => selectChapter(1)}
+                  className="text-xs font-mono-tech text-[var(--color-muted-foreground)] hover:text-amber-400 underline cursor-pointer"
+                >
+                  Restart Story
+                </button>
               </section>
             )}
           </div>
         )}
 
-        {/* ===================================================================
-            VIEW 2: COMPLETE NSSDCA 13-HARDWARE INTERACTIVE ENCYCLOPEDIA
-        =================================================================== */}
+        {/* ARCHIVE TAB */}
         {activeTab === 'catalog' && (
           <div className="max-w-6xl mx-auto space-y-6 story-beat-enter">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h1 className="font-display text-2xl font-extrabold text-amber-400">
-                  NASA NSSDCA Discarded Hardware Archive (13 Suites)
-                </h1>
-                <p className="text-sm text-[var(--color-muted-foreground)]">
-                  Explore every historical spacecraft, lander, rover, helicopter, and probe from the official challenge brief.
-                </p>
-              </div>
+              <h1 className="font-display text-2xl font-extrabold text-amber-400">
+                NASA NSSDCA Hardware Archive (13)
+              </h1>
 
               <div className="flex flex-wrap items-center gap-1.5">
                 {['All', 'Moon', 'Mars', 'Asteroid / Dwarf Planet', 'Deep Space / Heliocentric'].map(
@@ -886,7 +685,7 @@ export function App() {
                           : 'border-[var(--color-border)] bg-[var(--color-card)] hover:bg-[var(--color-surface)]'
                       }`}
                     >
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         <div className="flex items-center justify-between gap-2 text-[11px] font-mono-tech">
                           <span className="text-amber-400">{item.nssdcaId}</span>
                           <span className="text-cyan-400">{item.celestialBody}</span>
@@ -894,13 +693,10 @@ export function App() {
                         <h3 className="font-display font-bold text-sm leading-snug">
                           {item.name}
                         </h3>
-                        <p className="text-xs text-[var(--color-muted-foreground)] line-clamp-2">
-                          {item.tagline}
-                        </p>
                       </div>
                       <div className="flex items-center justify-between text-[11px] font-mono-tech pt-2 border-t border-[var(--color-border)] text-[var(--color-muted-foreground)]">
-                        <span className="text-emerald-400">{item.status}</span>
-                        <span>{item.massKg} kg</span>
+                        <span className="text-emerald-400">{item.locationName}</span>
+                        <span>{item.launchYear}</span>
                       </div>
                     </button>
                   );
@@ -912,41 +708,20 @@ export function App() {
                   <div className="sticky top-24 rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 space-y-4 shadow-xl">
                     <div className="border-b border-[var(--color-border)] pb-3">
                       <span className="text-xs font-mono-tech text-amber-400">
-                        NSSDCA {selectedArtifact.nssdcaId} • Launched {selectedArtifact.launchYear}
+                        NSSDCA {selectedArtifact.nssdcaId}
                       </span>
                       <h2 className="font-display text-lg font-extrabold mt-0.5">
                         {selectedArtifact.name}
                       </h2>
-                      <p className="text-xs text-cyan-400 font-mono-tech mt-0.5">
-                        {selectedArtifact.locationName} ({selectedArtifact.coordinates})
-                      </p>
                     </div>
 
                     <blockquote className="p-4 rounded-2xl bg-[var(--color-surface)] border-l-4 border-amber-400 text-sm italic text-[var(--color-foreground)]/90">
                       “{selectedArtifact.firstPersonVoice}”
                     </blockquote>
 
-                    <div className="space-y-1.5 text-xs sm:text-sm">
-                      <h4 className="font-semibold text-amber-400 text-xs">
-                        Why It Was Left Behind
-                      </h4>
-                      <p className="text-[var(--color-muted-foreground)] leading-relaxed">
-                        {selectedArtifact.whyLeftBehind}
-                      </p>
-                    </div>
-
-                    <div className="space-y-1.5 text-xs sm:text-sm">
-                      <h4 className="font-semibold text-emerald-400 text-xs">
-                        Scientific Legacy
-                      </h4>
-                      <ul className="space-y-1 list-disc list-inside text-[var(--color-muted-foreground)]">
-                        {selectedArtifact.scienceBreakthroughs.map((b, i) => (
-                          <li key={i} className="leading-relaxed">
-                            {b}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    <p className="text-xs sm:text-sm text-[var(--color-muted-foreground)] leading-relaxed">
+                      {selectedArtifact.whyLeftBehind}
+                    </p>
 
                     <div className="flex flex-wrap items-center gap-2 pt-2">
                       <a
@@ -955,7 +730,7 @@ export function App() {
                         rel="noreferrer"
                         className="flex-1 min-h-[42px] px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs flex items-center justify-center gap-1.5 transition"
                       >
-                        <span>Official NASA Archive</span>
+                        <span>NASA Record</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                       <button
@@ -966,7 +741,7 @@ export function App() {
                         }}
                         className="min-h-[42px] px-4 py-2 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-muted)] text-xs font-medium cursor-pointer transition"
                       >
-                        Visit in Chapter {selectedArtifact.chapterId}
+                        Chapter {selectedArtifact.chapterId}
                       </button>
                     </div>
                   </div>
@@ -976,23 +751,13 @@ export function App() {
           </div>
         )}
 
-        {/* ===================================================================
-            VIEW 3: SUBMISSION KIT & 7-SLIDE DECK
-        =================================================================== */}
+        {/* DECK & SUBMISSION TAB */}
         {activeTab === 'judge' && (
-          <div className="max-w-5xl mx-auto space-y-8 story-beat-enter">
-            <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 sm:p-8 flex flex-wrap items-center justify-between gap-4">
-              <div className="space-y-1 max-w-xl">
-                <span className="text-xs font-mono-tech text-amber-400">
-                  2026 NASA Space Apps Challenge Submission Kit
-                </span>
-                <h1 className="font-display text-2xl font-extrabold">
-                  7-Slide Presentation Deck & Ready-to-Paste Copy
-                </h1>
-                <p className="text-xs sm:text-sm text-[var(--color-muted-foreground)]">
-                  Solo participant note: Register under a <strong>Local Event</strong> (1–6 team members allowed) so you qualify for Global Judging.
-                </p>
-              </div>
+          <div className="max-w-4xl mx-auto space-y-6 story-beat-enter">
+            <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 flex flex-wrap items-center justify-between gap-4">
+              <h1 className="font-display text-xl sm:text-2xl font-extrabold">
+                7-Slide Deck & Submission Copy
+              </h1>
               <a
                 href="/slides.html"
                 target="_blank"
@@ -1000,16 +765,14 @@ export function App() {
                 className="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm flex items-center gap-2 transition"
               >
                 <Play className="w-4 h-4" />
-                <span>Open Fullscreen 7-Slide Deck</span>
+                <span>Open 7-Slide Deck</span>
               </a>
             </div>
 
             <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-sm text-amber-400">
-                    High-Level Summary (Copy for Submission Form)
-                  </h3>
+                  <h3 className="font-bold text-sm text-amber-400">Summary</h3>
                   <button
                     type="button"
                     onClick={() =>
@@ -1032,15 +795,13 @@ export function App() {
                   </button>
                 </div>
                 <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed">
-                  Silent Monuments is an interactive story quest and NSSDCA archive that brings NASA’s discarded off-world hardware back to life for school-age and casual learners. Stepping into the boots of Junior Archivist Maya, players journey across 5 chapters on the Moon, Mars, Asteroids, and Deep Space—hearing first-person stories from Apollo’s Moon Buggy, Opportunity, InSight, Ingenuity, and Pioneer 10, and operating each instrument in hands-on 2D simulations grounded in real NASA data.
+                  Silent Monuments is an interactive story quest and NSSDCA archive that brings NASA’s discarded off-world hardware back to life for school-age and casual learners.
                 </p>
               </div>
 
               <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-sm text-emerald-400">
-                    Mandatory Super Intelligence (SI / AI) Disclosure
-                  </h3>
+                  <h3 className="font-bold text-sm text-emerald-400">SI / AI Disclosure</h3>
                   <button
                     type="button"
                     onClick={() =>
@@ -1063,7 +824,7 @@ export function App() {
                   </button>
                 </div>
                 <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed">
-                  In accordance with the 2026 NASA Space Apps Challenge guidelines, Super Intelligence (SI) tools were used to assist with structuring the 5-chapter interactive story flow, scaffolding the React/TypeScript UI and HTML5 2D Canvas instrument simulations, and synthesizing procedural Web Audio API sound effects. All spacecraft IDs, landing coordinates, dates, mass specifications, and scientific discoveries were verified directly against official NASA NSSDCA and NASA Science documentation.
+                  Super Intelligence (SI) tools assisted with story structure, React/Canvas simulations, and Web Audio synthesis, verified against NASA NSSDCA records.
                 </p>
               </div>
             </section>
